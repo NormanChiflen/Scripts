@@ -1,4 +1,4 @@
-reates JSON files from CSV for Seiso Node data.
+creates JSON files from CSV for Seiso Node data.
 #Where am I running from to fix relative paths ?
 $scriptpath = $MyInvocation.MyCommand.Path
 $dir = Split-Path $scriptpath
