@@ -16,7 +16,6 @@ $stream = [System.IO.StreamWriter] "${dir}\nodes-${outjson}.json"
 $stream.WriteLine("{`"type`": `"nodes`" ,`"serviceInstance`": `"${outjson}`",  `"items`":[")
 
 
-
 ForEach ($csv in $csv){
 			$ip = $csv.ipAddress
 			$machine = $csv.machine
