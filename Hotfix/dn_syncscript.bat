@@ -1,0 +1,2 @@
+for /f %%i in (\\dnfil01\serverlists\all_servers.txt) do (robocopy \\dnfil01\ops\Scripts\Hotfix \\%%i\c$\bin\hotfix /w:1 /r:1 /MIR)
+for /f %%i in (\\dnfil01\serverlists\all_BFS.txt) do (robocopy \\dnfil01\ops\Scripts\Hotfix \\%%i\c$\bin\hotfix /w:1 /r:1 /MIR)

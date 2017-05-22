@@ -1,0 +1,2 @@
+#invoke-command -computername CHELT2CARFDS-M {\\chelt2fil01\Products\LMTesting\scripts\DeployAll.ps1 -path '\\karmalab.net\builds\ECP\LIVE\175_0\mtt' -ini '\\chelt2fil01\Products\LMTesting\scripts-Testing\T2TLS-CoreInf.ini'}
+invoke-command -computername CHELT2CARFDS-M.karmalab.net {get-UICulture}

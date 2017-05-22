@@ -1,0 +1,162 @@
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2071   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-BOT mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       825   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd CORP-BOT mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2042   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-FDS-01 mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+Error  1789   Tomorrow                10:20 AM      cann0nical! c:\bin\hotfix\setupsim.cmd AMR-FDS-02 BFS-DIR aaronb
+       1977   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-FDS-02 mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       1821   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-GAT-PCLSVC mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       1829   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBA-FC1 mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+       139   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       2114   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBM-CA mries $k3r123
+       33   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       70   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+        8   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       1918   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBM-CT mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBM-NC mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       1483   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBM-US mries $k3r123
+       23   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       1370   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBO-Paybot mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       619   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd BFS-DIR mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd BFS-DST mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+Error  1776   Tomorrow                10:20 AM      cann0nical! c:\bin\hotfix\setupsim.cmd BFS-PRE BFS-DIR aaronb
+       1963   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd BFS-PRE mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+Error   1   Tomorrow                10:20 AM      cann0nical! c:\bin\hotfix\setupsim.cmd BFS-QRY-FA BFS-DIR aaronb
+       188   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd BFS-QRY-FA mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+Error   1   Tomorrow                10:20 AM      cann0nical! c:\bin\hotfix\setupsim.cmd BFS-QRY-FB BFS-DIR aaronb
+       188   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd BFS-QRY-FB mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2061   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-BOT mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-EUR-01 mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       1981   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-EUR-02 mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2075   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-GAT-PCLSVC mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2108   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-WBM-DE mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2104   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-WBM-EU mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2064   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-WBM-FR mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2109   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-WBM-UK mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       2079   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-WBO mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       10   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       11   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       12   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       143   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+        2   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       2098   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd OPI-WBM mries $k3r123
+       25   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       29   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       30   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       37   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+       74   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+        9   Each M T W Th F S Su    2:00 AM       c:\localbin\timesync.cmd
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       1867   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd PER-UTL mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+Error  1861   Tomorrow                10:20 AM      cann0nical! c:\bin\hotfix\setupsim.cmd YDC BFS-DIR aaronb
+       2048   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd YDC mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-TVM mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Each M T W Th F S Su    2:15 AM       c:\localbin\TimeSync.cmd
+       859   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-TVH mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-TVH mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd EUR-TVM mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-TVH mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-TVM-ECT mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-TVH-ECT mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-TVH-HTL mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBO-HTL mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd AMR-WBQ mries $k3r123
+Status ID   Day                     Time          Command Line
+-------------------------------------------------------------------------------
+        1   Tomorrow                1:12 PM       c:\bin\hotfix\setupsim.cmd HTL-BOT mries $k3r123
+The network path was not found.

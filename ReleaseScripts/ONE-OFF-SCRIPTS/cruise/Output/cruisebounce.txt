@@ -1,0 +1,7 @@
+dnutlsbr05 was restarted at: Sun 06/12/2005 5:49:53.69,  bhunter restarted it 
+stopped          CruiseAPI                        CruiseAPI
+stopped          CruiseListener                   CruiseListener
+stopped          CruisePortMapper                 CruisePortMapper
+running          CruiseAPI                        CruiseAPI
+running          CruiseListener                   CruiseListener
+running          CruisePortMapper                 CruisePortMapper

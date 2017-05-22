@@ -1,0 +1,361 @@
+<job id="ZTIOEM">
+	<script language="VBScript" src="ZTIUtility.vbs"/>
+	<script language="VBScript" src="ZTIDiskUtility.vbs"/>
+	<script language="VBScript">
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      ZTIOEM.wsf
+' // 
+' // Version:   5.1.1642.01
+' // 
+' // Purpose:   Control OEM processing in SCCM
+' // 
+' // Usage:     cscript.exe [//nologo] ZTIOEM.wsf [/debug:true]
+' // 
+' // ***************************************************************************
+
+Option Explicit
+RunNewInstance
+
+
+'//----------------------------------------------------------------------------
+'//  Global Constants
+'//----------------------------------------------------------------------------
+
+' No global constants needed
+
+
+'//----------------------------------------------------------------------------
+'//  Main Class
+'//----------------------------------------------------------------------------
+
+Class ZTIOEM
+
+	'//----------------------------------------------------------------------------
+	'//  Class instance variable declarations
+	'//----------------------------------------------------------------------------
+
+	Dim iRetVal
+
+
+	'//----------------------------------------------------------------------------
+	'//  Constructor to initialize needed global objects
+	'//----------------------------------------------------------------------------
+
+	Private Sub Class_Initialize
+	
+	End Sub
+	
+	
+	'//----------------------------------------------------------------------------
+	'//  Main routine
+	'//----------------------------------------------------------------------------
+
+	Function Main
+
+		Dim iRetVal
+		Dim osdV4
+		Dim sCmd
+		Dim sParms
+		Dim oDrive
+		Dim sOSDrive
+		Dim sBootDrive
+		Dim CapturedVariables
+
+		iRetVal = Success
+
+		oLogging.CreateEntry "Start ZTI OEM for SCCM... Phase = " & oEnvironment.Item("Phase"), LogTypeInfo
+
+		' Dump Variables
+		On Error Resume Next
+			Set osdV4 = CreateObject("Microsoft.SMS.TSEnvironment")
+			For each sParms in osdV4.GetVariables()
+				' oLogging.CreateEntry sParms & " = " & Replace(osdV4(sParms), "Password", "P@ssword",1,-1, vbTextCompare ), LogTypeInfo
+			Next
+		On Error GoTo 0
+
+		'//----------------------------------------------------------------------------
+		'//  Support OEM scenarios if requested
+		'//----------------------------------------------------------------------------
+
+		CapturedVariables = array( _
+			"OSDInstallEditionIndex", _
+			"ConfigFileName", _
+			"OSDAnswerFilePath", _
+			"OSDImageCreator", _
+			"OSDInstallType", _
+			"OSDTargetSystemDrive", _
+			"OSDTargetSystemRoot", _
+			"OSDisk", _
+			"OSVersionNumber", _
+			"OSArchitecture", _
+			"InstallPackageID", _
+			"ConfigFilePackage", _
+			"OSDImagePackageID", _
+			"OSDImageIndex", _
+			"ImagePackageID", _
+			"")
+
+		If wscript.Arguments.Named.Exists("PREOEM") then
+
+			oLogging.CreateEntry "Run Pre-OEM Scripts.", LogTypeInfo
+
+			DeleteAllBreadCrumbs
+
+			' Find the Active Drive GetBootDrive(), mark it as inactive, and setup a Boot-BreadCrumb there.
+			sBootDrive = GetBootDriveEx
+
+			If sBootDrive = Failure then
+				oLogging.CreateEntry "GetBootDrive() Failure! ", LogTypeInfo
+			ElseIf not oFSO.DriveExists(sBootDrive) then
+				oLogging.CreateEntry "Boot drive does not Exist! = " & sBootDrive, LogTypeInfo
+				sBootDrive = Failure
+			ElseIf (not oFSO.GetDrive(sBootDrive).isReady) or oFSO.GetDrive(sBootDrive).DriveType <> 2 Then
+				oLogging.CreateEntry "Boot drive is not ready Hard Disk! = " & sBootDrive, LogTypeInfo
+				sBootDrive = Failure
+			End if
+
+			If sBootDrive = Failure then
+				oLogging.CreateEntry "Boot drive not found!", LogTypeInfo
+				For each oDrive in oFSO.Drives
+					If oDrive.DriveType = 2 and oDrive.DriveLetter<>"X" then
+						If oDrive.IsReady Then
+							If OFSO.FileExists(ODrive.DriveLetter & ":\bootmgr") OR oFSO.FileExists(ODrive.DriveLetter & ":\ntldr") then
+								sBootDrive = left(oDrive.DriveLetter,1) & ":"
+								Exit For
+							End if
+						End If
+					End if
+				Next
+				If sBootDrive = Failure then
+					oLogging.CreateEntry "No valid Hard Drive partition found! ", LogTypeError
+					Main = Failure
+					Exit Function
+				End if
+			End if
+
+			oLogging.CreateEntry "Boot drive found: " & sBootDrive , LogTypeInfo
+			RunDiskPartCommands array("Select Volume " & sBootDrive ,"Inactive","Exit")
+
+			With oFSO.CreateTextFile( sBootDrive & "\BreadCrumb.Boot" )
+				.WriteLine "Boot Drive"
+				.Close
+			End with
+
+			' Get the OS drive (OSDisk), and Dump all variables to the OS-BreadCrumb.
+			sOSDrive = oEnvironment.Item("OSDisk")
+			If sOSDrive = "" then
+				sOSDrive = oEnvironment.Item("OSDTargetSystemDrive")
+				If sOSDrive = "" then
+					sOSDrive = sBootDrive
+					oLogging.CreateEntry "OS Drive not found, defaulting to Boot Drive: " & sBootDrive, LogTypeWarning
+				End If
+			End If
+
+			With oFSO.CreateTextFile( sOSDrive & "\BreadCrumb.OS" )
+				.WriteLine "; OS Drive"
+				.WriteLine "[Settings]"
+				.WriteLine "Priority=Default"
+				.WriteLine ""
+				.WriteLine "[Default]"
+				For each sParms in CapturedVariables
+					If sParms <> "" then
+						If oEnvironment.Item(sParms) <> "" then
+							oLogging.CreateEntry "Save Environment Variable " & sParms & " = [" & oEnvironment.Item(sParms) & "].", LogTypeInfo
+							.WriteLine sParms & "=" & oEnvironment.Item(sParms)
+						Else
+							oLogging.CreateEntry "MISSING Environment Variable " & sParms & " .", LogTypeInfo
+						End if
+					End if
+				Next
+				.Close
+			End With
+
+		Elseif wscript.Arguments.Named.Exists("POSTOEM") then
+
+			oLogging.CreateEntry "Run Post-OEM Scripts.", LogTypeInfo
+
+			' Enumerate through all drives looking for BreadCrumb(s).
+			sOSDrive = ""
+			sBootDrive = ""
+
+			For each oDrive in oFSO.Drives
+				If oDrive.DriveType = 2 and oDrive.DriveLetter <> "X" then
+					If oDrive.IsReady Then
+
+						If oFSO.FileExists(ODrive.DriveLetter & ":\BreadCrumb.OS") then
+							If sOSDrive = "" then
+								oLogging.CreateEntry "Found Pre-Existing BreadCrumb: " & ODrive.DriveLetter & ":\BreadCrumb.OS", LogTypeInfo
+								sOSDrive = ODrive.DriveLetter & ":"
+							Else
+								oLogging.CreateEntry "Found another Pre-Existing BreadCrumb: " & ODrive.DriveLetter & ":\BreadCrumb.OS", LogTypeWarning
+							End if
+						End if
+
+						If oFSO.FileExists(ODrive.DriveLetter & ":\BreadCrumb.Boot") then
+							If sBootDrive = "" then
+								oLogging.CreateEntry "Found Pre-Existing BreadCrumb: " & ODrive.DriveLetter & ":\BreadCrumb.Boot", LogTypeInfo
+								sBootDrive = ODrive.DriveLetter & ":"
+							Else
+								oLogging.CreateEntry "Found another Pre-Existing BreadCrumb: " & ODrive.DriveLetter & ":\BreadCrumb.Boot", LogTypeWarning
+							End if
+						End if
+
+					End If
+				End if
+			Next
+
+			If sBootDrive = "" then
+				oLogging.CreateEntry "Boot Drive BreadCrumb not found, defaulting to C:", LogTypeWarning
+				sBootDrive = "C:"
+			End if
+
+			If sOSDrive = "" then
+				oLogging.CreateEntry "OS Drive BreadCrumb not found, defaulting to C:", LogTypeWarning
+				sOSDrive = "C:"
+			End if
+
+			' Run the Gather Script with the OS-BreadCrumb.
+			oLogging.CreateEntry "Restore OS Breadcrumb data: " & sOSDrive, LogTypeInfo
+
+			sCmd = "wscript.exe """ & oUtility.ScriptDir & "\ZTIGather.wsf"" /inifile:" & sOSDrive & "\BreadCrumb.OS"
+			iRetVal = oUtility.RunWithHeartbeat(sCmd)
+			TestAndLog iRetVal, "Running Gather process with the BreadCrumb.OS"
+
+			''''''''''''''''''''''''''''''''''''''''''''''''''''
+			' Check all important variables
+
+			FixDefaultValue "ConfigFileName",          "unattend.xml"
+			FixDefaultValue "OSDAnswerFilePath",       "C:\Windows\panther\unattend\unattend.xml"
+			FixDefaultValue "OSDImageCreator",         "Administrator"
+			FixDefaultValue "OSDInstallType",          "Sysprep"
+			FixDefaultValue "OSDTargetSystemDrive",    "C:"
+			FixDefaultValue "OSDTargetSystemRoot",     "C:\Windows"
+			FixDefaultValue "OSDisk",                  "C:"
+
+			FixDefaultValue "OSVersionNumber",         "6.0"
+			FixDefaultValue "OSArchitecture",          "x86"
+
+			If oEnvironment.Item( "OSDImageIndex" ) = "" and oEnvironment.Item( "OSDInstallEditionIndex" ) = "" then
+				FixDefaultValue "OSDInstallEditionIndex",  "1"
+				FixDefaultValue "OSDImageIndex",           "1"
+			Else
+				FixDefaultValue "OSDInstallEditionIndex",  oEnvironment.Item( "OSDImageIndex" )
+				FixDefaultValue "OSDImageIndex",           oEnvironment.Item( "OSDInstallEditionIndex" )
+			End if
+
+			' Fix any disk relative variables.
+			for each sParms in array("OSDTargetSystemDrive", "OSDTargetSystemRoot", "OSDisk", "OSDAnswerFilePath")
+				oEnvironment.Item(sParms) = sOSDrive & mid(oEnvironment.Item(sParms), 3)
+			next
+
+			''''''''''''''''''''''''''''''''''''''''''''''''''''
+			' Activate the drive with the Boot-BreadCrumb.
+			oLogging.CreateEntry "Re-Activate drive with breadCrumb.Boot : " & sBootDrive, LogTypeInfo
+			RunDiskPartCommands array("Select Volume " & sBootDrive ,"Active", "Exit")
+
+			DeleteAllBreadCrumbs
+
+		End if
+
+		Main = Success
+
+	End Function
+
+	Function FixDefaultValue ( sName, sDefault )
+
+		If oEnvironment.Item( sName ) = "" then
+			oLogging.CreateEntry sName & " is blank, OK to default to [" & sDefault & "]." , LogTypeWarning
+			oEnvironment.Item( sName ) = sDefault
+		End if
+
+	End function
+
+	Function DeleteAllBreadCrumbs
+
+		Dim oDrive
+
+		oLogging.CreateEntry "Delete all pre-existing Bread Crumbs on local machine...", LogTypeInfo
+
+		For each oDrive in oFSO.Drives
+			If oDrive.DriveType = 2 and oDrive.DriveLetter <> "X" then
+				If oDrive.IsReady Then
+
+					If oFSO.FileExists(ODrive.DriveLetter & ":\BreadCrumb.OS") then
+						oLogging.CreateEntry "Found Pre-Existing BreadCrumb: " & ODrive.DriveLetter & ":\BreadCrumb.OS", LogTypeInfo
+						TestAndLog oFSO.DeleteFile(ODrive.DriveLetter & ":\BreadCrumb.OS"), "Deleting BreadCrumb.OS on local machine"
+					End If
+
+					If oFSO.FileExists(ODrive.DriveLetter & ":\BreadCrumb.Boot") then
+						oLogging.CreateEntry "Found Pre-Existing BreadCrumb: " & ODrive.DriveLetter & ":\BreadCrumb.Boot", LogTypeInfo
+						TestAndLog oFSO.DeleteFile(ODrive.DriveLetter & ":\BreadCrumb.Boot"), "Deleting BreadCrumb.Boot on local machine"
+					End If
+
+				End If
+			End If
+		Next
+
+	End Function
+
+	Function RunDiskPartCommands(aCommands)
+		' Given a Drive, will make the drive Active (or Inactive)
+
+		Dim oExec, sLine
+
+		oLogging.CreateEntry "Start piped DiskPart Command." , LogTypeInfo
+		set oExec = oShell.Exec("Diskpart.exe")
+
+		For each sLine in aCommands
+			oLogging.CreateEntry  "DiskPart> " & sLine, LogTypeInfo
+			oExec.stdIn.WriteLine sLine
+		Next
+
+		' Log DiskPart Commands.
+
+		Do while oExec.Status = 0 or not oExec.StdOut.atEndOfStream
+			If not oExec.StdOut.atEndOfStream then
+				sLine = oExec.StdOut.ReadLine
+				oLogging.CreateEntry "    DiskPart > " & sLine, LogTypeInfo
+			End If
+			If not oExec.StdErr.atEndOfStream then
+				sLine = oExec.StdErr.ReadLine
+				oLogging.CreateEntry "    DiskPart > " & sLine, LogTypeError
+			End If
+		Loop
+
+		If oExec.ExitCode <> 0 then
+			oLogging.CreateEntry "DiskPart returned error = " & oExec.ExitCode, LogTypeError
+		Else
+			oLogging.CreateEntry "DiskPart returned SUCCESS! " , LogTypeInfo
+		End If
+		RunDiskPartCommands = oExec.ExitCode = 0
+
+	End Function
+
+
+
+	Function GetBootDriveEx
+		Dim sQuery, oPartition, oDisk
+
+		sQuery = "SELECT * from Win32_DiskPartition WHERE Bootable = TRUE"
+		For Each oPartition in objWMI.ExecQUery(sQuery)
+			For Each oDisk in objWMI.ExecQUery("ASSOCIATORS OF {" & oPartition.Path_ & "} WHERE AssocClass = Win32_LogicalDiskToPartition")
+
+				GetBootDriveEx = oDisk.DeviceID
+				Exit Function
+			Next
+		Next
+
+		GetBootDriveEx = Failure
+
+	End Function
+
+End Class
+
+	</script>
+</job>

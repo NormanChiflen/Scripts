@@ -1,0 +1,274 @@
+<job id="UDIWizard">
+   <script language="VBScript" src="ZTIUtility.vbs"/>
+   <script language="VBScript">
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      UDIWizard.wsf
+' // 
+' // Version:   5.1.1642.01
+' // 
+' // Purpose:   Display a wizard during a ConfigMgr task sequence
+' // 
+' // Usage:     cscript UDIWizard.wsf /definition:UDIWizard_Config.xml [/debug:true]
+' // 
+' // ***************************************************************************
+
+
+Option Explicit
+RunNewInstance
+
+
+'//----------------------------------------------------------------------------
+'//  Main Class
+'//----------------------------------------------------------------------------
+
+Class UDIWizard
+
+	'//----------------------------------------------------------------------------
+	'//  Global constant and variable declarations
+	'//----------------------------------------------------------------------------
+
+	Dim iRetVal
+
+	
+	'//----------------------------------------------------------------------------
+	'//  Main routine
+	'//----------------------------------------------------------------------------
+
+	Function Main
+	
+		' Local Variables
+
+		Dim sConfigFileName
+		Dim sConfigFilePath
+
+		Dim oConfigXML
+
+		Dim sCmd
+		Dim sWorkingDir
+		Dim arrAdmins
+		Dim sAdmin
+		Dim oAdministrators
+		Dim oPreflight
+		Dim oFilename
+		Dim oParameters
+		Dim sFilename
+		Dim sParameters
+		Dim bRemove
+		Dim oTSProgressUI
+
+		Dim oProcesses, oProcess
+		Dim sProcessName
+
+
+		iRetVal = Success
+
+
+		' Find and copy the specified XML config file
+
+		If oUtility.Arguments.Exists("Definition") then
+			sConfigFileName = oUtility.Arguments("Definition")
+		Else
+			sConfigFileName = "UDIWizard_Config.xml"
+		End if
+	
+		iRetVal = oUtility.FindFile(sConfigFileName, sConfigFilePath)
+		TestAndFail iRetVal, 9999, "Find configuration file " & sConfigFileName
+
+
+		' Load the XML file
+
+		Set oConfigXML = oUtility.CreateXMLDOMObjectEx(sConfigFilePath)
+
+
+		' Figure out what process to use
+
+		sProcessName = "explorer.exe"
+		Set oProcesses = objWMI.ExecQuery("select * from Win32_Process where Name='tsprogressui.exe'")
+		For each oProcess in oProcesses
+			sProcessName = "tsprogressui.exe"
+		Next
+		oLogging.CreateEntry "Using " & sProcessName & " for displaying wizard UI", LogTypeInfo
+
+
+		If oConfigXML.DocumentElement.NodeName = "OSDSetup" then
+
+
+			' ===========================
+			' Setup Wizard Pre-Processing
+			' ===========================
+
+			
+			' Strip the incompatible pre-req checks
+
+			For each oPreflight in oConfigXML.DocumentElement.SelectNodes("//Pages/Page[@Name=""PreFlightPage""]/PreFlight/Option")
+
+				' Get the values from the appropriate child nodes
+
+				Set oFilename = oPreflight.SelectSingleNode("Setter[@Property=""filename""]")
+				If not oFilename is Nothing then
+					sFilename = LCase(oFilename.Text)
+				Else
+					sFilename = ""
+				End if
+
+				Set oParameters = oPreflight.SelectSingleNode("Setter[@Property=""parameters""]")
+				If not oParameters is Nothing then
+					sParameters = LCase(oParameters.Text)
+				Else
+					sParameters = ""
+				End if
+
+
+				' Check if this pre-req check should be removed
+	
+				bRemove = False
+				If oEnvironment.Item("OSVersion") = "WinPE" or Left(oEnvironment.Item("OSCurrentVersion"),1) = "5" then
+
+					' Remove items not applicable to Windows PE or XP
+
+					If Instr(sParameters, "osdbootcount") > 0 or Instr(sParameters, "osdbitlockerstate") > 0 then
+						bRemove = true
+					End if
+
+				End if
+
+				If oEnvironment.Item("OSVersion") = "WinPE" then
+
+					' Remove items not applicable to Windows PE
+
+					If Instr(sParameters, "osddiskcheck") > 0 or Instr(sParameters, "osd_getprinters") > 0 then
+						bRemove = true
+					End if
+					If Instr(sFilename, "acpower") > 0 then
+						bRemove = true
+					End if
+
+				End if
+
+				If Left(oEnvironment.Item("OSCurrentVersion"),1) = "5" then
+
+					' Remove items not applicable to XP
+
+					' No XP-specific removals at this point
+
+				End if
+
+
+				' Remove if required
+
+				If bRemove then
+					oLogging.CreateEntry "Removed preflight " & oPreflight.Attributes.getNamedItem("DisplayName").Value & " because it was not applicable.", LogTypeInfo
+					oPreflight.parentNode.removeChild oPreflight
+				End if
+
+			Next
+
+
+			' Save the updated XML file
+
+			oConfigXML.Save oLogging.LogPath & "\OSDSetupWizard.xml"
+
+
+			' Build the command line and working directory
+
+			sCmd = "ServiceUI.exe -process:" & sProcessName & " OSDSetupWizard.exe /xml:""" & oLogging.LogPath & "\OSDSetupWizard.xml"""
+			If oEnvironment.Item("OSVersion") = "WinPE" then
+				sWorkingDir = oEnvironment.Substitute("%TOOLROOT%")
+			Else
+				sWorkingDir = oEnvironment.Substitute("%DEPLOYROOT%\Tools\x86")
+			End if
+		
+
+			' =====================
+			' Wizard Execution
+			' =====================
+
+
+			oLogging.CreateEntry "About to run command: " & sCmd, LogTypeInfo
+			oLogging.CreateEntry "   Working directory: " & sWorkingDir, LogTypeInfo
+
+			On Error Resume Next
+			oShell.CurrentDirectory = sWorkingDir
+			iRetVal = oShell.Run(sCmd, 0, true)
+			If Err then
+				iRetVal = Err.Number
+				oLogging.CreateEntry "ERROR executing command " & sCmd & ": " & Err.Description & " (" & Err.Number & ")", LogTypeError
+			ElseIf iRetVal = 0 then
+				oLogging.CreateEntry "Successfully executed command " & sCmd & ", rc = " & CStr(iRetVal), LogTypeInfo
+			Else
+				TestAndLog iRetVal, "Non-zero return code executing command " & sCmd & ", rc = " & iRetVal
+			End if
+			On Error Goto 0
+
+
+			' ======================
+			' Wizard Post-Processing
+			' ======================
+
+
+			' Split apart the administrator members and put them in a list
+
+			If oEnvironment.Item("OSDAddAdmin") <> "" then
+				arrAdmins = Split(Trim(oEnvironment.Item("OSDAddAdmin")), ";")
+				Set oAdministrators = oEnvironment.ListItem("Administrators")
+				For each sAdmin in arrAdmins
+					If not oAdministrators.Exists(sAdmin) then
+						oAdministrators.Add sAdmin, ""
+					End if
+				Next
+				oEnvironment.ListItem("Administrators") = oAdministrators
+			End if
+
+		ElseIf oConfigXml.DocumentElement.NodeName = "Wizard" then
+
+
+			' =====================
+			' HTA Wizard Processing
+			' =====================
+
+			' Run the wizard
+
+			sCmd = "ServiceUI.exe -process:" & sProcessName & " MSHTA.exe " & oUtility.ScriptDir & "\Wizard.hta /definition:""" & sConfigFileName & """"
+			On Error Resume Next
+			iRetVal = oShell.Run(sCmd, 1, true)
+			If Err then
+				iRetVal = Err.Number
+				oLogging.CreateEntry "ERROR executing command " & sCmd & ": " & Err.Description & " (" & Err.Number & ")", LogTypeError
+			ElseIf iRetVal = 0 then
+				oLogging.CreateEntry "Successfully executed command " & sCmd & ", rc = " & CStr(iRetVal), LogTypeInfo
+			Else
+				TestAndLog iRetVal, "UDIWizard: Non-zero return code executing command " & sCmd & ", rc = " & iRetVal
+			End if
+			On Error Goto 0
+
+
+			' See if the wizard completed or was cancelled
+
+			If oEnvironment.Item("WizardComplete") <> "Y" then
+				oLogging.CreateEntry "The wizard was cancelled, setting OSDSetupWizCancelled = TRUE", LogTypeInfo
+				oEnvironment.Item("OSDSetupWizCancelled") = "TRUE"
+			End if
+
+		Else
+
+			oLogging.ReportFailure "Invalid wizard configuration file specified.  The deployment will not proceed.", 9999
+
+		End if
+
+
+		' Exit with whatever return value was returned by the wizard
+
+		Main = iRetVal
+
+	End Function
+
+End Class
+
+   </script>
+</job>

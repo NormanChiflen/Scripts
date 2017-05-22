@@ -1,0 +1,2 @@
+This is a copy of scripts maintained by EWE, that have been modified to keep our PMP servers' daily files up to date.
+This is so our MTTSetup installation will run faster. The longer these files go between updates, the longer an installation takes.

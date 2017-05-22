@@ -1,0 +1,2 @@
+#!/bin/bash
+ps -eo %mem,pid,user,cmd | sort -n 

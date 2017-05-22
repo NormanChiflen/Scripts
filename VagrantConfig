@@ -1,0 +1,31 @@
+require 'fileutils'
+# https://gist.github.com/3798773 speed up vagrant for debian
+def local_cache(box_name)
+cache_dir = File.join(File.dirname(__FILE__), 'cache', 'apt', box_name)
+partial_dir = File.join(cache_dir, 'partial')
+FileUtils.mkdir_p(partial_dir) unless File.exists? partial_dir
+cache_dir
+end
+Vagrant.configure('2') do |config|
+system "/bin/bash -c -l 'rvm use ruby-2.0.0-p247 && cd #{File.dirname(__FILE__)} && bundle exec librarian-puppet install'"
+config.vm.box = 'deb606-64'
+config.vm.hostname = 'myhost'
+config.vm.provider 'virtualbox' do |v|
+v.customize(
+[
+'modifyvm', :id,
+'--name', 'dev-dev606',
+'--memory', '1024',
+'--natdnshostresolver1', 'on',
+'--natdnsproxy1', 'on'
+]
+)
+end
+cache_dir = local_cache(config.vm.box)
+config.vm.synced_folder cache_dir, '/var/cache/apt/archives/', id: 'v-cache', owner: 'vagrant', group: 'www-data'
+config.vm.network :forwarded_port, guest: 80, host: 8080
+config.vm.network :private_network, ip: '33.33.13.37'
+# set the module path and enable pluginsync for rvm , add if needed --debug
+config.vm.provision :shell, :inline => "apt-get update --fix-missing"
+config.vm.provision :puppet, module_path: ['modules'], options: '--pluginsync --verbose --debug', manifest_file: 'site.pp'
+end

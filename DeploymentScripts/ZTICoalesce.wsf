@@ -1,0 +1,145 @@
+<job id="ZTICoalesce">
+   <script language="VBScript" src="ZTIUtility.vbs"/>
+   <script language="VBScript">
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      ZTICoalesce.wsf
+' // 
+' // Version:   5.1.1642.01
+' // 
+' // Purpose:   Coalesce ConfigMgr task sequencer variables into a single
+' //            sequential variable list.
+' // 
+' // Usage:     cscript ZTICoalesce.wsf [/debug:true]
+' // 
+' // ***************************************************************************
+
+Option Explicit
+RunNewInstance
+
+'//----------------------------------------------------------------------------
+'//
+'//  Global constants
+'//
+'//----------------------------------------------------------------------------
+
+
+'//----------------------------------------------------------------------------
+'//  Main Class
+'//----------------------------------------------------------------------------
+
+Class ZTICoalesce
+
+
+	'//----------------------------------------------------------------------------
+	'//  Constructor to initialize needed global objects
+	'//----------------------------------------------------------------------------
+
+	Private Sub Class_Initialize
+
+	End Sub
+	
+	
+	'//----------------------------------------------------------------------------
+	'//  Main routine
+	'//----------------------------------------------------------------------------
+
+	Function Main
+	
+		Dim iRetVal	
+		Dim re
+		Dim sBaseVar
+		Dim oBaseVar
+		Dim sVar
+		Dim osdV4
+
+		iRetVal = Success
+
+
+		' Initialize regular expression instance
+
+		Set re = New RegExp
+		re.IgnoreCase = True
+		re.Global = True
+
+
+		' Initialize the pattern
+
+		If oEnvironment.Item("CoalescePattern") <> "" then
+			re.Pattern = oEnvironment.Item("CoalescePattern")
+		Else
+			re.Pattern = "Packages"
+		End if
+		oLogging.CreateEntry "Coalesce pattern to be used: " & re.Pattern, LogTypeInfo
+
+
+		' Get the target base variable name
+
+		If oEnvironment.Item("CoalesceTarget") <> "" then
+			sBaseVar = oEnvironment.item("CoalesceTarget")
+		Else
+			sBaseVar = "PACKAGES"
+		End if
+		oLogging.CreateEntry "Coalesce base variable to use: " & sBaseVar, LogTypeInfo
+
+
+		' Get the existing list
+
+		Set oBaseVar = oEnvironment.ListItem(sBaseVar)
+
+
+		' Enumerate through all the variables looking for matches.
+		' Ignore those starting with an underscore or starting with the specified base variable.
+
+		Set osdV4 = CreateObject("Microsoft.SMS.TSEnvironment")
+		For each sVar in osdV4.GetVariables()
+
+			If re.Test(sVar) then
+
+				If Left(sVar, 1) = "_" then
+				
+					oLogging.CreateEntry "Ignoring read-only variable " & sVar, LogTypeInfo
+					
+				ElseIf Left(sVar, Len(sBaseVar)) = sBaseVar then
+				
+					oLogging.CreateEntry "Ignoring variable " & sVar & " because it is already part of the list", LogTypeInfo
+					
+				ElseIf oBaseVar.Exists(sVar) then
+				
+					oLogging.CreateEntry "Ignoring variable " & sVar & " because it is already in the list", LogTypeInfo
+					
+				Else
+				
+					On Error Resume Next
+					oBaseVar.Add oEnvironment.Item(sVar), ""
+					On Error Goto 0
+					oLogging.CreateEntry "Added value " & oEnvironment.Item(sVar) & " from " & sVar & " to the list", LogTypeInfo
+					
+				End if
+
+			Else
+
+				oLogging.CreateEntry "Skipping " & sVar & ", no match", LogTypeInfo
+
+			End if
+
+		Next
+
+
+		' Set the new list value
+
+		Set oEnvironment.ListItem(sBaseVar) = oBaseVar
+
+
+		Main = iRetVal
+
+	End Function
+
+End Class
+   </script>
+</job>

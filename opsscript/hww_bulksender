@@ -1,0 +1,28 @@
+#!/bin/bash
+
+file=data.csv
+
+if [ ! -f $file ]
+then
+echo "ERROR: cannot find data.csv - exiting"
+exit 1
+fi
+
+itins=`cat $file | cut -d"," -f1`
+
+for itin in $itins
+
+do
+
+lang=`grep $itin $file | cut -d"," -f2`
+pos=`grep $itin $file | cut -d"," -f3`
+email=`grep $itin $file | cut -d"," -f4`
+name=`grep $itin $file | cut -d"," -f5`
+
+#echo $lang $pos $email $name
+
+curl -k -d "lastName=${name}&itineraryId=${itin}&voyagerLocale=${lang}&voyagerPos=${pos}&emailAddress=${email}" https://ssl.hotels.com/booking/conf_mail_voyager.html
+sleep 5
+
+done
+

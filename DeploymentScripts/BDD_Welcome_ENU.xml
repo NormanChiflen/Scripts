@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      BDD_Welcome_ENU.xml
+' // 
+' // Version:   5.1.1642.01
+' // 
+' // Purpose:   BDD Welcome Wizard
+' // 
+' // ***************************************************************************
+
+-->
+<Wizard>
+  <Global>
+
+      <CustomStatement>
+      <![CDATA[
+
+option explicit
+
+Dim sSelectedBtn
+
+document.title =  "Welcome Windows Deployment"
+window.resizeTo 700,500
+window.moveTo Window.screen.width/2 - 700/2, Window.screen.height/2 - 500/2 + 50
+
+Function GetValueFromID( oItem ) 
+
+	Select Case oItem.ID
+		Case buttonitem1.ID
+			GetValueFromID = "DEPLOYWIZARD"
+		Case buttonitem2.ID
+			GetValueFromID = "RECOVERY"
+		Case buttonitem3.ID
+			GetValueFromID = "COMMANDPROMPT"
+	End select
+
+End Function 
+
+Function RunSelCmd
+
+	Dim sValue
+	sValue = GetValueFromID(window.event.srcElement)
+
+	Select Case (window.event.type)
+	
+		Case "mouseout", "deactivate"
+		
+			If window.event.srcElement.ID <> sSelectedBtn then
+				window.event.srcElement.style.backgroundimage = "url(btnout.png)"
+			End if
+		
+		Case "mouseover"
+		
+			If window.event.srcElement.ID <> sSelectedBtn then
+				window.event.srcElement.style.backgroundimage = "url(btnover.png)"
+			End if
+
+		Case "activate"
+		
+			ActivateItem window.event.srcElement
+		
+		Case "click", "dblclick"
+			ActivateItem window.event.srcElement
+			RunSelectedCommand
+			
+	End Select
+
+End function
+
+Function ActivateItem ( oItemNew ) 
+
+	if sSelectedBtn <> "" then
+		document.GetElementByID(sSelectedBtn).style.backgroundimage = "url(btnout.png)"
+	End if
+	oItemNew.style.backgroundimage = "url(btnsel.png)"
+
+	sSelectedBtn = oItemNew.ID
+	oItemNew.Focus
+
+End function
+
+sub KeyHandlerCustom
+
+	if window.event.srcElement.tagName = "INPUT" then
+		KeyHandler
+		exit sub
+	End if
+
+	select case window.event.KeyCode
+
+		Case 40  ' Down
+
+			If window.event.srcElement.ID = "buttonItem1" and buttonItem2.style.display <> "none" then
+				ActivateItem buttonItem2
+			Elseif window.event.srcElement.ID = "buttonItem2" or window.event.srcElement.ID = "buttonItem1" then
+				ActivateItem buttonItem3
+			End if
+
+		Case 38  ' Up
+		
+			If window.event.srcElement.ID = "buttonItem3" and buttonItem2.style.display <> "none" then
+				ActivateItem buttonItem2
+			Elseif window.event.srcElement.ID = "buttonItem2" or window.event.srcElement.ID = "buttonItem3" then
+				ActivateItem buttonItem1
+			End if
+
+		End select
+	
+end sub
+
+Function RunSelectedCommand 
+	oEnvironment.Item("WelcomeWizardCommand") = GetValueFromID(document.GetElementByID(sSelectedBtn))
+	oEnvironment.Item("WizardComplete") = "Y"
+	SaveAllDataElements
+	SaveProperties
+	window.close
+End function
+
+Function SafeRegRead( KeyValue )
+   on error resume next
+      SafeRegRead = oShell.RegRead("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinPE\KeyboardLayouts\" & GetLocale & "\" & KeyValue)
+   on error goto 0
+end function
+
+function WelcomeWizard_CustomInitializationCloseout
+	buttonItem1.focus
+end function 
+
+function WelcomeWizard_CustomInitialization
+	Dim KeyboardLocale
+	Dim FoundPrimary
+	Dim sName, sID, i, j, Insert, oOption
+
+	FoundPrimary = False
+	ActivateItem buttonItem1
+
+	document.body.onkeyDown = getref("KeyHandlerCustom")
+	document.body.style.background = "url(WelcomeBanner.jpg)"
+	document.body.style.backgroundrepeat = "no-repeat"
+	
+	LeftWizardButtons.InnerHTML = LeftWizardButtons.InnerHTML + "<button accesskey=R id=buttonCancel language=vbscript onclick=window.close><U>R</U>eboot</button>"
+	
+	if not oFso.FileExists("x:\sources\recovery\RecEnv.exe") then
+		buttonItem2.Style.display = "none"
+	end if
+
+	' Test for the 1st registry entry
+	if isempty(SafeRegRead( "0\Name" )) then
+		' Not Found, run WpeUtil again
+		oLogging.CreateEntry "Run WPEUtil.exe ListKeyboardLayout " & GetLocale, LogTypeInfo
+		oShell.Run "wpeutil.exe ListKeyboardLayout " & GetLocale, 0, TRUE
+	end if
+
+	if isempty(SafeRegRead( "0\Name" )) or isempty(SafeRegRead( "0\ID" ))then
+		' Still not found, some kind of problem with wpeutil.exe
+		oLogging.CreateEntry "Could not enumerate Keyboard list through WPEUtil.exe", LogTypeWarning
+	end if
+
+	KeyboardLocale = oEnvironment.Item("KeyboardLocalePE")
+	if KeyboardLocale = "" then
+		KeyboardLocale = hex(GetLocale)
+		while len(KeyboardLocale) < 4
+			KeyboardLocale = "0" & KeyboardLocale
+		wend
+		KeyboardLocale = KeyboardLocale & ":0000" & KeyboardLocale
+	end if
+
+
+	i = 0
+	sName = SafeRegRead( i & "\Name" )
+	sID = SafeRegRead( i & "\ID" )
+	do while not isempty(sName) and not isempty(sID)
+
+		Insert = -1  ' Default
+
+		for j = 0 to WinPEKeyboard.options.length - 1
+			if StrComp(sName,WinPEKeyboard.Options(j).Text,VbTextCompare) < 0 then
+				Insert = j
+				exit For
+			end if
+		next
+
+		' Skip if pre-existing
+		for j = 0 to WinPEKeyboard.options.length - 1
+				if WinPEKeyboard.options(j).value = sID then
+				WinPEKeyboard.options(j).Selected = sID = KeyboardLocale
+				Insert = empty
+				exit for
+			end if
+		next
+
+		' Add entry to the display.
+		if not isempty(Insert) then
+			set oOption = document.CreateElement("OPTION")
+
+			if ucase(sID) = ucase(KeyboardLocale) then
+				FoundPrimary = True
+				oOption.Selected = True
+			elseif FoundPrimary = False and ucase(right(sID,8)) = ucase(right(KeyboardLocale,8)) then
+				oOption.Selected = True
+			end if
+			oOption.text = sName
+			oOption.Value = sID
+			WinPEKeyboard.Add oOption, Insert
+		end if
+
+		i = i + 1
+		sName = SafeRegRead( i & "\Name" )
+		sID = SafeRegRead( i & "\ID" )
+	loop
+
+end function
+
+function ConfigureStaticIP
+	oShell.run "MSHTA.exe " & oUtility.ScriptDir & "\Wizard.hta /definition:NICSettings_Definition_ENU.xml"
+end function
+
+      ]]>
+    </CustomStatement>
+
+  </Global>
+
+  <!-- ************************************************************** -->
+  <!-- ************************************************************** -->
+
+  <!-- Each page is defined within a PANE element. -->
+  <Pane id="Ready">
+
+	<!-- If ButtonNext is defined, it will override the default behaviour for this button -->
+	<ButtonNext>
+	  <Label>
+		<![CDATA[
+           <!-- This is the default Behaviour -->
+           <button accesskey=N style="display='none';" id=buttonNext language=vbscript onclick=ButtonNextClick><U>N</U>ext</button>
+        ]]>
+	  </Label>
+	</ButtonNext>
+
+	<!-- If ButtonCancel is defined, it will override the default behaviour for this button -->
+      <ButtonCancel>
+          <Label>
+              <![CDATA[
+           <!-- This is the default Behaviour -->
+           <button accesskey=R id=buttonCancel language=vbscript onclick=window.close style="display='none';" ><U>R</U>eboot</button>
+        ]]>
+          </Label>
+      </ButtonCancel>
+
+	<Initialization><![CDATA[ WelcomeWizard_CustomInitialization ]]> </Initialization>
+	<InitializationCloseout><![CDATA[ WelcomeWizard_CustomInitializationCloseout ]]> </InitializationCloseout>
+	<Validation><![CDATA[ RunSelectedCommand ]]> </Validation>
+
+	<!-- All Content here is displayed to the body of the window. -->
+      <Body>
+          <![CDATA[
+
+			<H1 style="color: black; display: none;" id=title_name>Welcome to Deployment!</H1>
+
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+			<button style="background: inherit; background-image: url(btnsel.png); width: 600px; height: 70px; border: 0px; font: 20px; " id="buttonItem1" 
+			title="Run the Microsoft Deployment Wizard to install an Operating System or perform other task."
+			onmouseover="RunSelCmd" onmouseout="RunSelCmd" onclick="RunSelCmd" ondblclick="RunSelCmd" onactivate="RunSelCmd" ondeactivate="RunSelCmd" 
+			>Run the Deployment Wizard <br/>to install a new Operating System</button>
+			<br/>
+
+			<button style="background: inherit; background-image: url(btnout.png); width: 600px; height: 70px;border: 0px;font: 20px; " id="buttonItem2" 
+			title="Run the Microsoft Windows Recovery Wizard (WinRE) to repair an existing installation of Windows."
+			onmouseover="RunSelCmd" onmouseout="RunSelCmd"  onclick="RunSelCmd" ondblclick="RunSelCmd"  onactivate="RunSelCmd" ondeactivate="RunSelCmd" 
+			>Run the Windows Recovery Wizard</button>
+			<br/>
+
+			<button style="background: inherit; background-image: url(btnout.png); width: 600px; height: 70px;border: 0px;font: 20px; " id="buttonItem3" 
+			title="For advanced users"
+			onmouseover="RunSelCmd" onmouseout="RunSelCmd"  onclick="RunSelCmd" ondblclick="RunSelCmd"  onactivate="RunSelCmd" ondeactivate="RunSelCmd" 
+			>Exit to Command Prompt</button>
+			<br/>
+
+<br/>
+		<table>
+			<tr>
+				<td align=right>Keyboard Layout</td>
+				<td> <select id=WinPEKeyboard Name=KeyboardLocalePE style="width: 400px;" >
+					<option value="0409:00000409">United States</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td align=right>Configure Static IP</td>
+				<td><input type=button value="Configure with Static IP Address..." onclick="configureStaticIP" title="For advanced users" /></td>
+			</tr>
+		</table>
+
+
+        ]]>
+
+    </Body>
+
+  </Pane>
+
+</Wizard>

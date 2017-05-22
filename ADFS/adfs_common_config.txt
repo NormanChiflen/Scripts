@@ -1,0 +1,31 @@
+Description~                                           Value
+ADFS account name~                                     cctlab\s-adfs
+ADFS account password~                                 Password1!
+IIS Cert location~                                     C:\Users\avinyar\Desktop\ADFS_Setup\[avinyar].cctlab.expecn.com\[avinyar].cctlab.expecn.com.pfx
+IIS Cert password~                                     ecudye
+Signing Cert location~                                 C:\Users\avinyar\Desktop\ADFS_Setup\cctadfssigning\cctadfssigning.cctlab.expecn.com.pfx
+Signing Cert password~                                 oofsevo
+Decrypting Cert location~                              C:\Users\avinyar\Desktop\ADFS_Setup\cctadfsdecrypting\cctadfsdecrypting.cctlab.expecn.com.pfx
+Decrypting Cert password~                              kuedimej
+Netscaler or FederationServiceName~                    tokenprovider.cctlab.expecn.com
+Primary ADFS Server(consumed by secondary only)~       CHCLAPPADFS02.cctlab.expecn.com
+Provisioning cert location~                            C:\Users\avinyar\Desktop\ADFS_Setup\cctprovisioning.cctlab.expecn.com\cctprovisioning.cctlab.expecn.com.pfx
+Provisioning cert password~                            galigi
+Attribute store SQL Server Name or dns name~           CHCLSQLADFS01
+RollCall store SQL Server Name or dns name~            CHCLSQLADFS01
+RollCall Database Name~                                RollCall_ADFS
+Identifiers(creates Identifies=Endpoint=Claim name)~   https://localhost/ngat/,https://belcicrm02.sea.corp.expecn.com/,https://chelwebcrm07.karmalab.net/ngat/,https://chelwebcrm79.karmalab.net/,https://chelwebcrm80.karmalab.net/,https://chelwebcrm82.karmalab.net/,https://belcicrm02/,https://chelwebcrm07/ngat/,https://chelwebcrm79/,https://chelwebcrm80/,https://chelwebcrm82/
+
+#Production SQL~		CHCXSQLADFS01
+#Lab~ 					CHCLSQLADFS01
+
+#How to use
+#please do not rename the file. Currently script is hard coded to use 
+#Future versions will allow you to specify config file, not this one.
+#please do not reorder the lines and do not remove the ~ delimiter.
+#Quotes are not necessary.
+
+#Also, remember that line 1 of config file is a header, so it's ignored.
+#Powershell reads config file as an array and first array entry is 0, so line 2 is array entry 0.
+#In short, Line 2 = 0, 11=9
+

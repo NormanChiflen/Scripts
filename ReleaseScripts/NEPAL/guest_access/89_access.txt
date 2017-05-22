@@ -1,0 +1,3 @@
+\registry\machine\software\expedia\webserver\qscript_accessmask
+    89_AccountAccess = REG_DWORD 0x00000001
+    UpdateNow = REG_DWORD 0x00000001

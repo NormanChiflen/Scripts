@@ -1,0 +1,1178 @@
+<job id="LTIApply">
+	<script language="VBScript" src="ZTIBCDUtility.vbs"/>
+	<script language="VBScript" src="ZTIConfigFile.vbs"/>
+	<script language="VBScript" src="ZTIDiskUtility.vbs"/>
+	<script language="VBScript" src="ZTIUtility.vbs"/>
+	<script language="VBScript">
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      LTIApply.wsf
+' // 
+' // Version:   5.1.1642.01
+' // 
+' // Purpose:   Apply image (OS or PE) to the hard drive
+' // 
+' // Usage:     cscript.exe [//nologo] LTIApply.wsf [/debug:true] [/pe] [/post]
+' // 
+' // ***************************************************************************
+
+Option Explicit
+RunNewInstance
+
+'//----------------------------------------------------------------------------
+'//  Main Class
+'//----------------------------------------------------------------------------
+
+Class LTIApply
+
+	'//----------------------------------------------------------------------------
+	'//  Class instance variable declarations
+	'//----------------------------------------------------------------------------
+	
+	' Global ConfigFile object
+	Dim oOSXMLDom
+	
+	' A dictionary object for all operating systems Guid,XMLDomNode
+	Dim oOperatingSystems
+
+	' an XMLDomNode object of the OS item selected
+	Dim oOS
+
+	'//----------------------------------------------------------------------------
+	'//  Constructor to initialize needed global objects
+	'//----------------------------------------------------------------------------
+
+	Private Sub Class_Initialize
+
+		If oEnvironment.Item("DestinationLogicalDrive") = "" Then
+			TestAndFail oUtility.determinepartition, 7713, "Could not Determine Partition to deploy to"
+		End If
+
+
+	End Sub
+
+	
+	'//----------------------------------------------------------------------------
+	'//  Main routine
+	'//----------------------------------------------------------------------------
+
+	Function Main
+	
+		Dim iRetVal
+		Dim sOSBuild
+		Dim sFile
+
+		iRetVal = Success
+
+
+
+		'//----------------------------------------------------------------------------
+		'//  See what we need to do
+		'//----------------------------------------------------------------------------
+
+
+		
+		
+		If oUtility.Arguments.Exists("pe") then
+
+			' Put PE into place as the bootable OS
+
+			iRetVal = InstallPE
+
+		ElseIf oUtility.Arguments.Exists("post") then
+
+			' Call the cleanup routine
+
+			iRetVal = PostCleanup
+
+		Else
+
+			' Get the OS record
+			
+			set oOSXMLDom =  new ConfigFile
+			oOSXMLDom.sFileType = "OperatingSystems"
+			
+			set oOperatingSystems = oOSXMLDom.FindItems
+			
+			TestAndFail oOperatingSystems.exists(oEnvironment.Item("OSGUID")), 5601,"Verify OS guid: %OSGUID% exists."
+			set oOS = oOperatingSystems.Item(oEnvironment.Item("OSGUID"))
+			TestAndFail not(oOS is Nothing), 5602, "Open XML with OSGUID: %OSGUID%"
+
+			sOSBuild = "0"
+			sFile = ""
+			If not oOS.SelectSingleNode("Build") is nothing then
+				sOSBuild = oOS.SelectSingleNode("Build").Text
+			End if 
+			If not oOS.SelectSingleNode("ImageFile") is nothing then
+				sFile = oOS.SelectSingleNode("ImageFile").Text
+			End if 
+
+
+			' Apply the specified image
+
+			If sFile = "" then
+
+				iRetVal = UnattendedInstall
+
+			Elseif Left(sOSBuild, 1) < "6" then
+
+				iRetVal = ApplyImage
+
+			Else
+
+				iRetVal = ApplySetup
+
+			End if
+
+
+		End if
+
+		Main = iRetval
+
+	End Function
+
+
+	'//---------------------------------------------------------------------------
+	'//  Function:	InstallPE()
+	'//   Purpose:	Install Windows PE on the hard drive and make it the default OS
+	'//---------------------------------------------------------------------------
+	Function InstallPE()
+
+		Dim iRc
+		Dim sBootsect
+		Dim oFile
+		Dim sDir
+		Dim sArchitecture
+		Dim sGUID
+		Dim sBootDrive
+		Dim sScript
+		Dim bDoBCD
+
+		InstallPE = Success
+
+
+		' Unless we're just preparing the BCD at this point, do the BCD edits necessary to boot to Windows PE
+
+		If not oUtility.Arguments.Exists("bcd") then
+
+			oLogging.CreateEntry "------  Applying bootable Windows PE image ------", LogTypeInfo
+			oLogging.CreateEvent 41018, LogTypeInfo, "LTI applying Windows PE", Array()
+
+			'Determine If Bitlocker is enabled and Operating System is Vista or Server 2008
+			'If Vista or Server 2008, we need to stage the PE image on the Bitlocker Partition
+
+			If oEnvironment.Item("ISBDE") <> "" Then
+				If oEnvironment.Item("ISBDE") and Left(oEnvironment.Item("OSCurrentVersion"),3) = "6.0" Then
+					sBootDrive = GetBootDrive
+					oLogging.CreateEntry sBootDrive, LogTypeInfo
+					oEnvironment.Item("DestinationLogicalDrive") = sBootDrive
+				End If
+			End If
+
+			' Determine which architecture of PE we should install
+
+			sArchitecture= oEnvironment.Item("ImageProcessor")
+			If sArchitecture = "" then
+				sArchitecture = oEnvironment.Item("Architecture")
+				oLogging.CreateEntry "ImageProcessor not set, will boot into Windows PE architecture " & sArchitecture, LogTypeInfo
+			Else
+				oLogging.CreateEntry "Will boot into Windows PE architecture " & sArchitecture & " to match OS being deployed.", LogTypeInfo
+			End if
+
+			sDir = oEnvironment.Item("DeployRoot") & "\Boot\LiteTouchPE_" & sArchitecture & ".wim"
+			TestAndFail  oFSO.FileExists( sDir ), 5610, "Verify File: " & sDir 
+
+
+			' Copy bootmgr
+
+			If not oFSO.FileExists(oEnvironment.Item("DestinationLogicalDrive") & "\Bootmgr") then
+				oLogging.CreateEntry "Copying " & oEnvironment.Item("DeployRoot") & "\Boot\" & sArchitecture & "\bootmgr to " & oEnvironment.Item("DestinationLogicalDrive") & "\bootmgr", LogTypeInfo
+				oFSO.CopyFile oEnvironment.Item("DeployRoot") & "\Boot\" & sArchitecture & "\bootmgr", oEnvironment.Item("DestinationLogicalDrive") & "\", true
+			End if
+
+
+			' Copy the PE boot image
+
+			oLogging.CreateEntry "Copying " & oEnvironment.Item("DeployRoot") & "\Boot\LiteTouchPE_" & sArchitecture & ".wim to " & oEnvironment.Item("DestinationLogicalDrive") & "\sources\boot.wim", LogTypeInfo
+			If not oFSO.FolderExists(oEnvironment.Item("DestinationLogicalDrive") & "\sources") then
+				oFSO.CreateFolder oEnvironment.Item("DestinationLogicalDrive") & "\sources"
+			End if
+			If MulticastCopy(oEnvironment.Item("DeployRoot") & "\Boot\LiteTouchPE_" & sArchitecture & ".wim", oEnvironment.Item("DestinationLogicalDrive") & "\sources\boot.wim") = "" then
+				oFSO.CopyFile oEnvironment.Item("DeployRoot") & "\Boot\LiteTouchPE_" & sArchitecture & ".wim", oEnvironment.Item("DestinationLogicalDrive") & "\sources\boot.wim", true
+				oLogging.CreateEntry "Windows PE WIM file copied successfully.", LogTypeInfo
+			Else
+				oLogging.CreateEntry "Windows PE WIM file successfully transferred using multicast.", LogTypeInfo
+			End if
+
+
+			' Copy the boot files
+
+			oLogging.CreateEntry "Copying " & oEnvironment.Item("DeployRoot") & "\Boot\" & sArchitecture & "\boot to" & oEnvironment.Item("DestinationLogicalDrive") & "\boot", LogTypeInfo
+			For each sDir in Array("boot", "boot\fonts")
+				If not oFSO.FolderExists(oEnvironment.Item("DestinationLogicalDrive") & "\" & sDir) then
+					oFSO.CreateFolder oEnvironment.Item("DestinationLogicalDrive") & "\" & sDir
+				End if
+				For each oFile in oFSO.GetFolder(oEnvironment.Item("DeployRoot") & "\Boot\" & sArchitecture & "\" & sDir).Files
+					If oFSO.FileExists(oEnvironment.Item("DestinationLogicalDrive") & "\" & sDir & "\" & oFile.Name) then
+						' Do nothing, file is already there
+						oLogging.CreateEntry "Skipping existing " & oFile.Name & " file.", LogTypeInfo
+					Else
+						oLogging.CreateEntry "Copying " & oFile.Path & " to " & oEnvironment.Item("DestinationLogicalDrive") & "\" & sDir & "\" & oFile.Name, LogTypeInfo
+						oFSO.CopyFile oFile.Path, oEnvironment.Item("DestinationLogicalDrive") & "\" & sDir & "\" & oFile.Name, true
+					End if
+				Next
+			Next
+
+
+			' If Vista or above, copy the script and its dependencies locally as they'll be needed to prep the BCD later
+
+			If Left(oEnvironment.Item("OSCurrentVersion"), 1) >= "6" then
+
+				oUtility.VerifyPathExists oEnvironment.Item("_SMSTSMDataPath") & "\Scripts"
+				For each sScript in Array("LTIApply.wsf", "ZTIBCDUtility.vbs", "ZTIConfigFile.vbs", "ZTIDiskUtility.vbs", "ZTIUtility.vbs")
+					oFSO.CopyFile oUtility.ScriptDir & "\" & sScript, oEnvironment.Item("_SMSTSMDataPath") & "\Scripts\" & sScript, true
+				Next
+
+			End if
+
+		End if
+
+
+		' We need to set up the BCD to boot into Windows PE.  If we are currently running XP/2003, we need to do this 
+		' now while we can still get to BCDEDIT.  For Vista and above, we must do it later so that Sysprep doesn't
+		' complain.
+
+		bDoBCD = True
+		If Left(oEnvironment.Item("OSCurrentVersion"), 1) >= "6" and oUtility.Arguments.Exists("stage") then
+			bDoBCD = False
+		End if
+
+		If bDoBCD then
+
+			' Create the RamDisk Store for MDT
+
+			If isBCDEditReady then
+
+				BCDBackupStore oEnvironment.Item("DestinationLogicalDrive") & "\boot\bcd.save"
+
+				sGUID = BDD_RAMDISK_GUID
+				iRC = CreateNewBCDEntryEx ( "", sGUID, "Microsoft Deployment WinPE", oEnvironment.Item("DestinationLogicalDrive"), "\sources\boot.wim" )
+			
+				iRC = BCDObjectExistsEx( "", sGUID )
+				TestAndLog iRC, "BCDObjectExistsEx("", " & BDD_RAMDISK_GUID & " )"
+
+				iRC = AdjustBCDDefaults ( "", sGUID )
+
+			End if
+
+
+			' Install the Longhorn boot sector if we are on XP (already present if on Vista or later)
+
+			If Left(oEnvironment.Item("OSCurrentVersion"), 1) < "6" then
+
+				iRc = oUtility.FindFile("bootsect.exe", sBootsect)
+				TestAndFail  iRc, 5611, "Search for BootSect.EXE"
+
+
+				oLogging.CreateEntry "Executing BOOTSECT.EXE to install a Vista boot sector", LogTypeInfo
+				iRc = oShell.Run("cmd.exe /c " & chr(34) & sBootsect & chr(34) & " /nt60 " & oEnvironment.Item("DestinationLogicalDrive") & " /mbr", 0, true)
+				If iRC <> 0 then
+					oLogging.CreateEntry "Non-zero return code from BOOTSECT.EXE, may not support /MBR switch; trying again without", LogTypeInfo
+					iRc = oShell.Run("cmd.exe /c " & chr(34) & sBootsect & chr(34) & " /nt60 " & oEnvironment.Item("DestinationLogicalDrive") & "", 0, true)
+				End if
+				oLogging.CreateEntry "BOOTSECT.EXE return code = " & iRc, LogTypeInfo
+				oLogging.CreateEntry "Boot sector upgraded, reboot is required.", LogTypeInfo
+
+			End if
+
+		End if
+
+		oLogging.CreateEvent 41019, LogTypeInfo, "LTI Windows PE applied successfully", Array()
+
+		oEnvironment.item("BootPE") = "True"
+		'Determine the DestinationLogicalDrive again as it might have changed
+		oEnvironment.Item("DestinationLogicalDrive") = ""
+		TestAndFail oUtility.determinepartition, 7713, "Could not Determine Partition to deploy to"
+
+
+	End Function
+
+
+	Sub ClearAttributes(oFolder)
+
+		Dim oFile
+		Dim oSubFolder
+
+		On Error Resume Next
+
+		' Clear the read-only attribute on the folder, if set
+
+		If oFolder.Attributes and 1 then
+			oFolder.Attributes = oFolder.Attributes - 1
+		End if
+
+
+		' Clear the read-only attribute on each file
+
+		For each oFile in oFolder.Files
+			If oFile.Attributes and 1 then
+				oFile.Attributes = oFile.Attributes - 1
+			End if
+		Next
+
+
+		' Recursively clean up each subfolder
+
+		For each oSubFolder in oFolder.Subfolders
+			ClearAttributes oSubFolder
+		Next
+
+		On Error Goto 0
+
+	End Sub
+
+
+	'//---------------------------------------------------------------------------
+	'//  Function:	ApplySetup()
+	'//  Purpose:	Apply the specified Windows Vista image using Setup
+	'//---------------------------------------------------------------------------
+	Function ApplySetup()
+
+		Dim iRc
+		Dim sImagePath
+		Dim sImageIndex
+		Dim sWorkingDir
+		Dim sCmd
+		Dim oOperatingSystem
+		Dim sIncludesSetup
+		Dim sBuild
+		Dim sPlatform
+		Dim sSource
+		Dim sFlags
+		Dim oNode
+		Dim sWDSServer
+		Dim oAvailableLanguages
+		Dim aKeys
+		Dim sKey
+		Dim oUnattend
+		Dim sLocalPath
+
+
+		ApplySetup = Success
+
+
+		oLogging.CreateEntry "------  Applying Windows image using Setup.exe ------", LogTypeInfo
+
+
+		sImagePath = oUtility.SelectSingleNodeString(oOS,"ImageFile")
+		If Left(sImagePath, 1) = "." then
+
+			' See if this is a WDS image
+
+			Set oNode = oOS.selectSingleNode("WDSServer")
+			If not (oNode is Nothing) then
+				sWDSServer = oNode.Text
+			End if
+
+
+			' Make sure that's where we want to pull it from
+
+			If sWDSServer <> "" then
+				If oEnvironment.Item("WDSServer") <> "" then
+					sWDSServer = oEnvironment.Item("WDSServer")
+				End if
+			End if
+
+
+			' Set the actual image path
+
+			If sWDSServer <> "" then
+				sImagePath = "\\" & sWDSServer & "\REMINST" & Mid(sImagePath, 2)
+			Else
+				sImagePath = oEnvironment.Item("DeployRoot") & Mid(sImagePath, 2)
+			End if
+
+		End if
+		sImageIndex = oUtility.SelectSingleNodeString(oOS,"ImageIndex")
+
+
+		' See if we can get the file via multicast
+
+		sLocalPath = MulticastCopy(sImagePath, "")
+		If sLocalPath <> "" then
+			sImagePath = sLocalPath
+		End if
+
+
+		oLogging.CreateEvent 41020, LogTypeInfo, "LTI applying image " & sImagePath & " using SETUP.EXE", Array()
+
+
+		If not oFSO.FileExists(sImagePath) then
+			oUtility.ValidateConnection sImagePath
+		End if
+
+		TestAndFail  oFSO.FileExists( sImagePath ), 5630, "Verify File: " & sImagePath 
+
+
+		' Find setup path
+
+		If oFSO.FileExists(oFSO.GetParentFolderName(sImagePath) & "\Sources\Setup.exe") then
+			sWorkingDir = oFSO.GetParentFolderName(sImagePath) & "\Sources"
+		ElseIf oFSO.FileExists(oFSO.GetParentFolderName(sImagePath) & "\Setup.exe") then
+			sWorkingDir = oFSO.GetParentFolderName(sImagePath)
+		Else
+			' Find SETUP somewhere else
+
+			For each oOperatingSystem in oOperatingSystems.Items
+
+				' Get the details for the currently-selected OS
+
+				sIncludesSetup = ""
+				sBuild = ""
+				sPlatform = ""
+				sSource = ""
+				sFlags = ""
+
+				on error resume next
+				sIncludesSetup = UCase(oUtility.SelectSingleNodeString(oOperatingSystem,"IncludesSetup"))
+				sBuild = oUtility.SelectSingleNodeString(oOperatingSystem,"Build")
+				sPlatform = UCase(oUtility.SelectSingleNodeString(oOperatingSystem,"Platform"))
+				sSource = oEnvironment.Item("DeployRoot") & Mid(oUtility.SelectSingleNodeString(oOperatingSystem,"Source"), 2)
+				on error goto 0 
+				
+				If not oOperatingSystem.SelectSingleNode("Flags") is nothing then
+					sFlags = ucase(oOperatingSystem.SelectSingleNode("Flags").Text)
+				End if
+
+				' See if it will work
+
+				If sIncludesSetup = "TRUE" and sPlatform = UCase(oEnvironment.Item("Architecture")) and left(sBuild,8) = left(oEnvironment.Item("ImageBuild"),8) and sFlags = UCase(oEnvironment.Item("ImageFlags")) then
+					sWorkingDir = sSource & "\Sources"
+					oLogging.CreateEntry "Found a matching SETUP in " & sWorkingDir, LogTypeInfo
+					Exit For
+				End if
+			Next
+
+			' Make sure we found SETUP
+
+			If sWorkingDir = "" then
+				oLogging.CreateEntry "ERROR - Unable to find SETUP, needed to install the image " & sImagePath, LogTypeError
+				ApplySetup = Failure
+				Exit Function
+			End if
+
+		End if
+
+
+		' Load the unattend.xml
+
+		Set oUnattend = oUtility.CreateXMLDOMObjectEx(oUtility.LocalRootPath & "\unattend.xml")
+
+
+		' Make sure the image path is set correctly in the unattend.xml
+
+		Set oNode = oUnattend.selectSingleNode("//settings[@pass=""windowsPE""]/component[@name=""Microsoft-Windows-Setup""]/ImageInstall/OSImage/InstallFrom/Path")
+		If not (oNode is Nothing) then
+			If oNode.Text <> sImagePath then
+				oLogging.CreateEntry "Updating unattend.xml to change image path from " & oNode.Text & " to " & sImagePath, LogTypeInfo
+				oNode.Text = sImagePath
+				oUnattend.Save oUtility.LocalRootPath & "\unattend.xml"
+			End if
+		End if
+
+
+		' Figure out the SetupUILanguage
+
+		Set oAvailableLanguages = oUtility.SectionContents(sWorkingDir & "\lang.ini", "Available UI Languages")
+		If oAvailableLanguages.Count > 0 then
+
+			aKeys = oAvailableLanguages.Keys
+			sKey = aKeys(0)
+
+
+			' Find the SetupUILanguage entry
+
+			Set oNode = oUnattend.selectSingleNode("//settings[@pass=""windowsPE""]/component[@name=""Microsoft-Windows-International-Core-WinPE""]/SetupUILanguage/UILanguage")
+			If not (oNode is Nothing) then
+				If oNode.Text <> sKey then
+					oLogging.CreateEntry "Updating unattend.xml to change Setup UI Language from " & oNode.Text & " to " & sKey, LogTypeInfo
+					oNode.Text = sKey
+					oUnattend.Save oUtility.LocalRootPath & "\unattend.xml"
+				End if
+			End if
+
+		End if
+
+
+		' Clean off old OS if running in PE
+
+		If oEnvironment.Item("OSVersion") = "WinPE" then
+			oLogging.ReportProgress "Cleaning drive", 20
+			CleanDrive
+		End if
+
+
+		' Get setup to apply the image (ZTIConfigure copied Unattend.xml to the DestinationLogicalDrive)
+
+		sCmd = """" & sWorkingDir & "\setup.exe"" /noreboot /unattend:" & oUtility.LocalRootPath & "\unattend.xml"
+		If FindOEM <> "" then
+			sCmd = sCmd & " /m:""" & FindOEM & """"
+		End if
+
+		oLogging.CreateEntry "Installing image from " & sImagePath & " using command: " & sCmd, LogTypeInfo
+		oLogging.ReportProgress "Installing image", 50
+		iRc = oUtility.RunWithHeartbeat(sCmd)
+
+		If iRc = 0 then
+
+			oLogging.CreateEvent 41021, LogTypeInfo, "Setup completed successfully.", Array()
+
+		Else
+
+			oLogging.CreateEvent 41022, LogTypeError, "Setup failed applying image " & sImagePath & ", rc = " & iRc, Array(iRc)
+
+		End if
+
+
+		ApplySetup = iRc
+
+	End Function
+
+
+	'//---------------------------------------------------------------------------
+	'//
+	'//  Function:	ApplyImage()
+	'//
+	'//  Input:	None
+	'//
+	'//  Return:	Success - 0
+	'//		Failure - non-zero
+	'//
+	'//  Purpose:	Apply the specified Windows XP image to the machine.  (We
+	'//             always use Setup to install Vista images.)
+	'//
+	'//---------------------------------------------------------------------------
+	Function ApplyImage()
+
+		Dim iRc
+		Dim sImagePath
+		Dim sImageIndex
+		Dim sSourcePath
+		Dim sCmd
+		Dim oNode
+		Dim sWDSServer
+		Dim sBootsect
+		Dim sImageX
+		Dim sLocalPath
+		Dim sRWMPath
+
+
+		ApplyImage = Success
+
+
+		oLogging.CreateEntry "------  Applying Windows image using ImageX.exe ------", LogTypeInfo
+
+
+		sImagePath = oUtility.SelectSingleNodeString(oOS,"ImageFile")
+		If Left(sImagePath, 1) = "." then
+
+			' See if this is a WDS image
+
+			Set oNode = oOS.selectSingleNode("WDSServer")
+			If not (oNode is Nothing) then
+				sWDSServer = oNode.Text
+			End if
+
+
+			' Make sure that's where we want to pull it from
+
+			If sWDSServer <> "" then
+				If oEnvironment.Item("WDSServer") <> "" then
+					sWDSServer = oEnvironment.Item("WDSServer")
+				End if
+			End if
+
+
+			' Set the actual image path
+
+			If sWDSServer <> "" then
+				sImagePath = "\\" & sWDSServer & "\REMINST" & Mid(sImagePath, 2)
+			Else
+				sImagePath = oEnvironment.Item("DeployRoot") & Mid(sImagePath, 2)
+			End if
+
+		End if
+		sImageIndex = oUtility.SelectSingleNodeString(oOS,"ImageIndex")
+
+
+		oLogging.CreateEvent 41023, LogTypeInfo, "LTI applying image " & sImagePath & " using ImageX", Array()
+
+		If not oFSO.FileExists(sImagePath) then
+			oUtility.ValidateConnection sImagePath
+		End if
+
+		TestAndFail  oFSO.FileExists( sImagePath ), 5640, "Verify File: " & sImagePath 
+
+
+		' Set the "SourcePath" property so it can be used later (if needed)
+
+		sSourcePath = oUtility.SelectSingleNodeString(oOS,"Source")
+		If Left(sSourcePath, 1) = "." then
+			sSourcePath = oEnvironment.Item("DeployRoot") & Mid(sSourcePath, 2)
+		End if
+		oEnvironment.Item("SourcePath") = sSourcePath
+
+
+		' See if we can get the file via multicast
+
+		sLocalPath = MulticastCopy(sImagePath, "")
+		If sLocalPath <> "" then
+			sImagePath = sLocalPath
+		End if
+
+
+		' If WDS, look for an RWM file
+
+		If sWDSServer <> "" then
+
+			sRWMPath = oFSO.GetParentFolderName(sImagePath) & "\RES.RWM"
+			If oFSO.FileExists(sRWMPath) then
+
+				' See if we can get that file via multicast
+
+				sLocalPath = MulticastCopy(sRWMPath, "")
+				If sLocalPath <> "" then
+					sRWMPath = sLocalPath
+				End if
+
+			Else
+				sRWMPath = ""
+			End if
+
+		End if
+
+
+		' Clean off old OS if running in PE
+
+		If oEnvironment.Item("OSVersion") = "WinPE" then
+			oLogging.ReportProgress "Cleaning drive", 20
+			CleanDrive
+		End if
+
+
+		' Find ImageX.exe
+
+		iRc = oUtility.FindFile("imagex.exe", sImageX)
+		TestAndFail  iRc, 5641, "FindFile: ImageX.Exe" 
+
+		' Build the command line as needed
+
+		If sRWMPath <> "" then
+			sCmd = "cmd /c """"" & sImageX & """ /apply """ & sImagePath & """ " & sImageIndex & " /ref """ & sRWMPath & """" & " " & oEnvironment.Item("DestinationLogicalDrive") & " >> " & oUtility.LogPath & "\LTIApply_imagex.log 2>&1"""
+		Else
+			sCmd = "cmd /c """"" & sImageX & """ /apply """ & sImagePath & """ " & sImageIndex & " " & oEnvironment.Item("DestinationLogicalDrive") & " >> " & oUtility.LogPath & "\LTIApply_imagex.log 2>&1"""
+		End if
+
+
+		' Apply the image
+
+		oLogging.ReportProgress "Applying image", 50
+		oLogging.CreateEntry "Applying new image from " & sImagePath & " using command: " & sCmd, LogTypeInfo
+		iRc = oShell.Run(sCmd, 0, true)
+		TestAndFail  iRc, 41024, "Cun ImageX: " & sCmd
+
+		oLogging.CreateEvent 41025, LogTypeInfo, "The image " & sImagePath & " was applied successfully.", Array()
+
+
+		' Install a boot sector
+
+		iRc = oUtility.FindFile("bootsect.exe", sBootsect)
+		TestAndFail  iRc, 5643, "Find BootSect.exe"
+
+
+		oLogging.CreateEntry "Executing BOOTSECT.EXE to install a boot sector", LogTypeInfo
+		iRc = oShell.Run("cmd.exe /c " & chr(34) & sBootsect & chr(34) & " /nt52 " & oEnvironment.Item("DestinationLogicalDrive") & "", 0, true)
+		oLogging.CreateEntry "BOOTSECT.EXE return code = " & iRc, LogTypeInfo
+		oLogging.CreateEntry "Boot sector updated, reboot is needed.", LogTypeInfo
+
+
+		' Clean up boot and bootmgr
+
+		On Error Resume Next
+		If oFSO.FolderExists(oEnvironment.Item("DestinationLogicalDrive") & "\boot") then
+			oFSO.DeleteFolder oEnvironment.Item("DestinationLogicalDrive") & "\Boot"
+		End if
+		If oFSO.FileExists(oEnvironment.Item("DestinationLogicalDrive") & "\bootmgr") then
+			oFSO.DeleteFile oEnvironment.Item("DestinationLogicalDirve") & "\bootmgr"
+		End if
+		Err.Clear
+		On Error Goto 0
+
+
+		ApplyImage = Success
+
+
+	End Function
+
+
+	'//---------------------------------------------------------------------------
+	'//
+	'//  Function:	UnattendedInstall()
+	'//
+	'//  Input:	None
+	'//
+	'//  Return:	Success - 0
+	'//		Failure - non-zero
+	'//
+	'//  Purpose:	Perform an unattended install of the specified OS (XP/2003)
+	'//
+	'//---------------------------------------------------------------------------
+	Function UnattendedInstall()
+
+		Dim sSourcePath
+		Dim sPlatform
+		Dim sPlatformDir
+		Dim sMakeLocalSource
+		Dim sOEM
+		Dim sInstallCmd
+		Dim sBootsect
+		Dim iRc
+		Dim oHelper, sSDDL, oDescriptor, oLogicalFile
+
+		UnattendedInstall = Success
+
+
+		oLogging.CreateEntry "------  Performing unattended install ------", LogTypeInfo
+
+
+		sSourcePath = oUtility.SelectSingleNodeString(oOS,"Source")
+		If Left(sSourcePath, 1) = "." then
+			sSourcePath = oEnvironment.Item("DeployRoot") & Mid(sSourcePath, 2)
+		End if
+		If not oFSO.FolderExists(sSourcePath) then
+			oUtility.ValidateConnection sSourcePath
+		End if
+
+		TestAndFail  oFSO.FolderExists( sSourcePath ), 5650, "Verify Directory: " & sSourcePath 
+
+		oLogging.CreateEvent 41026, LogTypeInfo, "Performing unattend install from " & sSourcePath, Array()
+
+
+		' Figure out the platform directory name
+
+		sPlatform = oUtility.SelectSingleNodeString(oOS,"Platform")
+		If UCase(sPlatform) = "X64" then
+			sPlatformDir = "amd64"
+		Else
+			sPlatformDir = "i386"
+		End if
+
+
+		' Make sure the source directory exists
+
+		TestAndFail  oFSO.FolderExists( sSourcePath & "\" & sPlatformDir ), 5651, "Verify Directory: " & sSourcePath & "\" & sPlatformDir 
+
+
+		' Clean off old OS if running in PE
+
+		If oEnvironment.Item("OSVersion") = "WinPE" then
+			oLogging.ReportProgress "Cleaning drive", 20
+			CleanDrive
+		End if
+
+
+		' Copy the source directory
+
+		oLogging.CreateEntry "Copying " & sSourcePath & "\" & sPlatformDir & " directory to the local machine", LogTypeInfo
+		oUtility.VerifyPathExists oUtility.LocalRootPath & "\source\" & sPlatformDir
+		oLogging.ReportProgress "Copying Windows source files to " & oUtility.LocalRootPath & "\source\" & sPlatformDir, 20
+		oFSO.CopyFolder sSourcePath & "\" & sPlatformDir, oUtility.LocalRootPath & "\source\" & sPlatformDir, true
+
+		If sPlatformDir = "amd64" then  ' Also need i386 source in this case
+
+			oLogging.CreateEntry "Copying " & sSourcePath & "\i386 directory to the local machine", LogTypeInfo
+			oFSO.CopyFolder sSourcePath & "\i386", oUtility.LocalRootPath & "\source\i386", true
+
+		End if
+
+
+		' Copy the Tablet PC source directory, if it exists
+		sMakeLocalSource = ""
+
+		If oFSO.FileExists(sSourcePath & "\Cmpnents\TabletPC\" & sPlatformDir & "\TABLETPC.CAB") then
+			oLogging.CreateEntry "Copying " & sSourcePath & "\Cmpnents directory to the local machine", LogTypeInfo
+			oUtility.VerifyPathExists oUtility.LocalRootPath & "\source\Cmpnents"
+			oLogging.ReportProgress "Copying Windows component files to " & oUtility.LocalRootPath & "\source\Cmpnents", 40
+			oFSO.CopyFolder sSourcePath & "\Cmpnents", oUtility.LocalRootPath & "\source\Cmpnents", true
+			sMakeLocalSource = " /makelocalsource:all"
+		End if
+
+		' Copy the R2 Source Directory, if it exists
+		If oFSO.FileExists(sSourcePath & "\Cmpnents\R2\SETUP2.EXE") then
+			oLogging.CreateEntry "Copying " & sSourcePath & "\Cmpnents directory to the local machine", LogTypeInfo
+			oUtility.VerifyPathExists oUtility.LocalRootPath & "\source\Cmpnents"
+			oLogging.ReportProgress "Copying Windows component files to " & oUtility.LocalRootPath & "\source\Cmpnents", 40
+			oFSO.CopyFolder sSourcePath & "\Cmpnents", oUtility.LocalRootPath & "\source\Cmpnents", true
+			sMakeLocalSource = " /makelocalsource:all"
+		End if
+
+		' Copy the OEM directory, if one is found
+
+		sOEM = FindOEM
+		If sOEM <> "" then
+			oLogging.CreateEntry "Copying " & sOEM & " directory to the local machine", LogTypeInfo
+			oUtility.VerifyPathExists oUtility.LocalRootPath & "\source\" & sPlatformDir & "\$OEM$"
+			oLogging.ReportProgress "Copying $OEM$ files to " & oUtility.LocalRootPath & "\source\"  & sPlatformDir & "\$OEM$", 45
+			oFSO.CopyFolder sOEM, oUtility.LocalRootPath & "\source\"  & sPlatformDir & "\$OEM$", true
+		End if
+
+
+		' Set the "SourcePath" property so it can be used later (if needed)
+
+		oEnvironment.Item("SourcePath") = sSourcePath
+
+
+		' Build the installation command line
+
+		sInstallCmd = """" & oUtility.LocalRootPath & "\source\" & sPlatformDir & "\winnt32.exe"""
+		sInstallCmd = sInstallCmd & " /unattend1:" & oUtility.LocalRootPath & "\unattend.txt"
+		sInstallCmd = sInstallCmd & " /copysource:lang /syspart:" & oEnvironment.Item("DestinationLogicalDrive") & " /tempdrive:" & oEnvironment.Item("DestinationLogicalDrive") & " /debug4:" & oUtility.LogPath & "\debug.log /noreboot"
+		sInstallCmd = sInstallCmd & sMakeLocalSource
+
+
+		' Install a boot sector (NT52 - monitor bug #1707627)
+
+		iRc = oUtility.FindFile("bootsect.exe", sBootsect)
+		TestAndFail  iRc, 5652, "FindFile: bootsect.exe" 
+
+		oLogging.CreateEntry "Executing BOOTSECT.EXE to install a boot sector", LogTypeInfo
+		iRc = oShell.Run("cmd.exe /c """"" & sBootsect & """ /nt52" & oEnvironment.Item("DestinationLogicalDrive") & "", 0, true)
+		oLogging.CreateEntry "BOOTSECT.EXE return code = " & iRc, LogTypeInfo
+		oLogging.CreateEntry "Boot sector updated, reboot is needed.", LogTypeInfo
+
+		' Set default permissions on the disk
+
+		Set oHelper = objWMI.Get("Win32_SecurityDescriptorHelper")
+		sSDDL = "O:BAG:SYD:(A;OICI;FA;;;BA)(A;OICI;FA;;;SY)(A;OICIIO;GA;;;CO)(A;OICI;0x1200a9;;;BU)(A;CI;LC;;;BU)(A;CIIO;DC;;;BU)(A;;0x1200a9;;;WD)"
+ 
+		oHelper.SDDLToWin32SD sSDDL, oDescriptor
+ 
+		Set oLogicalFile = objWMI.Get("Win32_LogicalFileSecuritySetting.Path='" & oEnvironment.Item("DestinationLogicalDrive") & "\'")
+		TestAndLog oLogicalFile.SetSecurityDescriptor(oDescriptor), "Set permissions on the root of the OS Drive"
+		
+
+		' Initiate the unattended installation
+
+		oLogging.CreateEntry "Performing unattended install using command: " & sInstallCmd, LogTypeInfo
+		oLogging.ReportProgress "Performing unattended installation", 60
+		iRc = oUtility.RunWithHeartbeat(sInstallCmd)
+
+		If iRc = 0 then
+			oLogging.CreateEvent 41027, LogTypeInfo, "Unattended install completed successfully.", Array()
+		Else
+			oLogging.CreateEvent 41028, LogTypeError, "Unattended install failed, rc = " & CStr(iRc), Array(iRc)
+		End if
+
+
+
+		UnattendedInstall = iRc
+
+	End Function
+
+
+	Function CleanDrive
+
+		Dim oFolder
+		Dim oFile
+		Dim iRc
+
+		oLogging.CreateEntry "Cleaning off old operating system", LogTypeInfo
+
+		For each oFolder in oFSO.GetFolder(oEnvironment.Item("DestinationLogicalDrive") & "\").Subfolders
+			Select Case lcase(oFolder.Name)
+			Case "minint", "recycler", "system volume information", "deploy", "drivers", "_smstasksequence", "smstslog", "sysprep"
+				oLogging.CreateEntry "Skipping " & oFolder.Path, LogTypeInfo
+			Case Else
+				oLogging.CreateEntry "Deleting " & oFolder.Path, LogTypeInfo
+
+				iRc = oShell.Run("cmd.exe /c rd /s /q """ & oFolder.Path & """", 0, true)
+				If iRc <> 0 then
+					oLogging.CreateEntry "Non-zero return code from rd /s /q """ & oFolder.Path & """  = " & CStr(iRc), LogTypeInfo
+				End if
+
+			End Select
+		Next
+		For each oFile in oFSO.GetFolder(oEnvironment.Item("DestinationLogicalDrive") & "\").Files
+			Select Case oFile.Name
+			Case "MININT"
+				oLogging.CreateEntry "Skipping " & oFile.Path, LogTypeInfo
+			Case Else
+				oLogging.CreateEntry "Deleting " & oFile.Path, LogTypeInfo
+				On Error Resume Next
+				oFSO.DeleteFile oFile.Path, true
+				TestAndLog SUCCESS,5671, "Delete File: " & oFile.Path
+				On Error Goto 0
+			End Select
+		Next
+
+	End Function
+
+
+	Function FindOEM
+
+		Dim sSourcePath
+		Dim oNode
+		Dim sWDSServer
+
+
+		' Find out where the OS files should be
+
+		sSourcePath = oUtility.SelectSingleNodeString(oOS,"Source")
+		If Left(sSourcePath, 1) = "." then
+
+			' See if this is a WDS image
+
+			Set oNode = oOS.selectSingleNode("WDSServer")
+			If not (oNode is Nothing) then
+				sWDSServer = oNode.Text
+			End if
+
+
+			' Make sure that's where we want to pull it from
+
+			If sWDSServer <> "" then
+				If oEnvironment.Item("WDSServer") <> "" then
+					sWDSServer = oEnvironment.Item("WDSServer")
+				End if
+			End if
+
+
+			' Set the actual source path
+
+			If sWDSServer <> "" then
+				sSourcePath = "\\" & sWDSServer & "\REMINST" & Mid(sSourcePath, 2)
+			Else
+				sSourcePath = oEnvironment.Item("DeployRoot") & Mid(sSourcePath, 2)
+			End if
+
+		End if
+
+
+		' Return the appropriate path
+
+		If oFSO.FolderExists(oEnvironment.Item("DeployRoot") & "\Control\" & oEnvironment.Item("TaskSequenceID") & "\$OEM$") then
+			FindOEM = oEnvironment.Item("DeployRoot") & "\Control\" & oEnvironment.Item("TaskSequenceID") & "\$OEM$"
+		ElseIf oFSO.FolderExists(sSourcePath & "\$OEM$") then
+			FindOEM = sSourcePath & "\$OEM$"
+		ElseIf oFSO.FolderExists(oEnvironment.Item("DeployRoot") & "\" & oEnvironment.Item("Architecture") & "\$OEM$") then
+			FindOEM = oEnvironment.Item("DeployRoot") & "\" & oEnvironment.Item("Architecture") & "\$OEM$"
+		ElseIf oFSO.FolderExists(oEnvironment.Item("DeployRoot") & "\$OEM$") then
+			FindOEM = oEnvironment.Item("DeployRoot") & "\$OEM$"
+		Else
+			FindOEM = ""
+		End if
+
+	End Function
+
+
+	'//---------------------------------------------------------------------------
+	'//  Function:	PostCleanup()
+	'//  Purpose:	Clean up after an OS install
+	'//---------------------------------------------------------------------------
+	Function PostCleanup()
+
+		Dim oAccount
+
+
+		' Try to remove the "TempAccount" account
+
+		If oEnvironment.Item("OSVersion") <> "WinPE" then
+
+			On Error Resume Next
+			Set oAccount = GetObject("WinNT://.")
+			If Err then
+				oLogging.CreateEntry "Unable to get WinNT ADSI provider: " & Err.Description & " (" & Err.Number & ")", LogTypeWarning
+			Else
+				oAccount.Delete "user", "TempAccount"
+				If Err then
+					oLogging.CreateEntry "Unable to delete account TempAccount (probably does not exist): " & Err.Description & " (" & Err.Number & ")", LogTypeInfo
+				Else
+					oLogging.CreateEntry "Successfully deleted TempAccount.", LogTypeInfo
+				End if
+			End if
+			On Error Goto 0
+			Err.Clear
+		End if
+
+
+		' If on Vista, clean up the C:\Drivers directory if it exists (no longer needed since the drivers were injected into the Vista driver store)
+
+		If Left(oEnvironment.Item("OSCurrentVersion"),3) >= "6.0" and oFSO.FolderExists(oEnvironment.Item("DestinationLogicalDrive") & "\Drivers") then
+
+			On Error Resume Next
+			oLogging.CreateEntry "Deleting" & oEnvironment.Item("DestinationLogicalDrive") & "\Drivers folder since all drivers were injected into the Windows Vista drivers store.", LogTypeInfo
+			oFSO.DeleteFolder oEnvironment.Item("DestinationLogicalDrive") & "\Drivers", true
+			If Err then
+				oLogging.CreateEntry "Error deleting" & oEnvironment.Item("DestinationLogicalDrive") & "\Drivers: " & Err.Description & " (" & Err.Number & ")", LogTypeInfo
+			End if
+
+		End if
+
+
+		' See if we need to move the Windows source files
+
+		If oFSO.FolderExists(oUtility.LocalRootPath & "\source") then
+
+			On Error Resume Next
+			If Left(oUtility.LocalRootPath,2) = Left(oENV("WINDIR"),2) Then
+				oFSO.MoveFolder oUtility.LocalRootPath & "\source", oEnv("WINDIR") & "\source"
+			Else
+				oFSO.CopyFolder oUtility.LocalRootPath & "\source", oEnv("WINDIR") & "\source"
+				oFSO.DeleteFolder oUtility.LocalRootPath & "\source", True
+			End if
+			If Err then
+				oLogging.CreateEntry "Error moving source folder from " & oUtility.LocalRootPath & "\source to " & oEnv("WINDIR") & "\source: " & Err.Description & " (" & Err.Number & ")", LogTypeWarning
+			Else
+				oLogging.CreateEntry "Successfully moved source folder from " & oUtility.LocalRootPath & "\source to " & oEnv("WINDIR") & "\source", LogTypeInfo
+
+
+				' Set the source file path in the registry so that Windows can find the new location
+
+				oShell.RegWrite "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\SourcePath", oEnv("WINDIR") & "\Source", "REG_SZ"
+				TestAndLog SUCCESS, 5680, "Update registry: HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\SourcePath = " & oEnv("WINDIR") & "\Source"
+
+				oShell.RegWrite "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\ServicePackSourcePath", oEnv("WINDIR") & "\Source", "REG_SZ"
+				TestAndLog SUCCESS, 5681, "Update registry: HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\ServicePackSourcePath = " & oEnv("WINDIR") & "\Source"
+
+			End if
+			On Error Goto 0
+			Err.Clear
+
+		End if
+
+		PostCleanup = Success
+
+	End Function
+
+
+	Function MulticastCopy(sSourcePath, sDestFile)
+
+		Dim arrSplit
+		Dim sServerName
+		Dim sShare
+		Dim sSourceDir
+		Dim sSourceFile
+		Dim sDestDir
+		Dim sCmd
+		Dim sWDSMcast
+		Dim iRetVal
+		Dim sLog
+		Dim sSettingsXML, oSettingsXML
+
+		' Make sure multi-cast is enabled on the distribution share
+		iRetVal = oUtility.FindFile("Settings.xml", sSettingsXML)
+		If iRetVal <> Success Then
+			oLogging.CreateEntry "Could not find settings.xml", LogTypeInfo
+		Else
+			Set oSettingsXML = CreateObject("MSXML2.DOMDocument")
+			oSettingsXML.Load sSettingsXML
+			
+			If Ucase(oSettingsXML.DocumentElement.SelectSingleNode("EnableMulticast").Text) = "FALSE" Then
+				MulticastCopy = ""
+				Exit Function
+			End IF
+		End If
+		
+		
+		' Make sure the file requested is from a UNC path
+
+		If Left(sSourcePath, 2) <> "\\" then
+			oLogging.CreateEntry "Multicast is not possible if the file is not coming from a UNC path", LogTypeInfo
+			MulticastCopy = ""
+			Exit Function
+		End if
+
+		' Make sure we are in Windows PE
+
+		If oEnvironment.Item("OSVersion") <> "WinPE" then
+			oLogging.CreateEntry "Multicast is not possible when running in a full operating system", LogTypeInfo
+			MulticastCopy = ""
+			Exit Function
+		End if
+
+		' Get the server and share name from the path
+
+		arrSplit = Split(Mid(sSourcePath,3), "\")
+		sServerName = arrSplit(0)
+		sShare = arrSplit(1)
+		sSourceFile = Mid(sSourcePath, Len(sServerName) + Len(sShare) + 5)
+		sSourceDir = Mid(sSourcePath, 1, Len(sSourcePath) - Len(arrSplit(UBound(arrSplit))) - 1)
+
+
+		' Determine the local destination for the file if not specified
+
+		If sDestFile = "" then
+			sDestFile = oUtility.LocalRootPath & "\" & sSourceFile
+			sDestDir = oFSO.GetParentFolderName(sDestFile)
+		Else
+			sDestDir = oUtility.LocalRootPath & "\" & sSourceDir
+		End if
+
+
+		' Try to find wdsmcast.exe
+
+		iRetVal = oUtility.FindFile("wdsmcast.exe", sWDSMcast)
+		If iRetVal <> Success then
+			oLogging.CreateEntry "Unable to find WDSMCAST.EXE, multicast is not possible.", LogTypeInfo
+			MulticastCopy = ""
+			Exit Function
+		End if
+
+		' Build the command line
+
+		oLogging.CreateEntry "Multicast transfer to directory: " & sDestDir, LogTypeInfo
+		oUtility.VerifyPathExists sDestDir
+		sLog = oUtility.LogPath & "\LTIApply_wdsmcast.log"
+		sCmd = "cmd.exe /c """"" & sWDSMcast & """ /verbose /transfer-file /server:" & sServerName & " /namespace:""" & sShare & """ /SourceFile:""" & sSourceFile & """ /DestinationFile:""" & sDestFile & """ /Username:" & oEnvironment.Item("UserDomain") & "\" & oEnvironment.Item("UserID") & " /password:""" & oEnvironment.Item("UserPassword") & """ > """ & sLog & """"""
+
+
+		' Execute the command line
+
+		oLogging.ReportProgress "Attempting multicast transfer", 1
+		oLogging.CreateEntry "About to run command: " & sCmd, LogTypeInfo
+		iRetVal = oShell.Run(sCmd, 0, true)
+
+		If iRetVal = 0 then
+		
+			oLogging.CreateEntry "Multicast transfer of """ & sSourcePath & """ to """ & sDestFile & """ completed successfully.", LogTypeInfo
+
+			If TestAndLog ( oFSO.FileExists( sDestFile ), "Verify File Exists" ) then
+				MulticastCopy = sDestFile
+			Else
+				MulticastCopy = ""
+			End if
+
+		Else
+		
+			oLogging.CreateEntry "Multicast transfer could not be completed, rc = " & iRetVal & ", falling back to using " & sSourcePath, LogTypeInfo
+			MulticastCopy = ""
+			Exit Function
+			
+		End if
+		
+		
+	End Function
+
+
+End class
+
+
+	</script>
+</job>
+
+

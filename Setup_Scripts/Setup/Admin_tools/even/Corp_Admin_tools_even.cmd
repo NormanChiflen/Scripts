@@ -1,0 +1,1 @@
+start psexec \\DNWBAAMRFC02 -u expeso\%1 -p %2 c:\bin\hotfix\setup.cmd AMR-WBA-FC2 %1 %2

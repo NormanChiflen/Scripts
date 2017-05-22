@@ -1,0 +1,2 @@
+for /F %%a in (\\dnfil01\serverlists\dnbfdxx_even.txt) do soon \\%%a 201 c:\bin\hotfix\BFS_BFD_HF.cmd %1 %2 %3
+for /F %%a in (\\dnfil01\serverlists\dnbfdxx_odd.txt) do soon \\%%a 201 c:\bin\hotfix\BFS_BFD_HF.cmd %1 %2 %3

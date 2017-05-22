@@ -1,0 +1,29 @@
+Description~                                           Value
+ADFS account name~                                     cct\s-adfs
+ADFS account password~                                        <fill it at deployment time>
+IIS Cert location & name~                              C:\ADFS\prod\[dphillips].expedia.com\[dphillips].expedia.com.pfx
+IIS Cert password~                                            <fill it at deployment time>
+Signing Cert location & name~                          C:\ADFS\prod\signing.cctoken.expedia.com\signing.cctoken.expedia.com.pfx
+Signing Cert password~                                        <fill it at deployment time>
+Decrypting Cert location & name~                       C:\ADFS\prod\encrypt.cctoken.expedia.com\encrypt.cctoken.expedia.com.pfx
+Decrypting Cert password~                                     <fill it at deployment time>
+Netscaler or FederationServiceName~                    cctoken.expedia.com
+Primary ADFS Server(consumed by secondary only)~       chc-appadfs01
+Provisioning cert location & name~                     C:\ADFS\prod\cctprovisioning.expedia.com\cctprovisioning.expedia.com.pfx
+Provisioning cert password~                                   <fill it at deployment time>
+Attribute store SQL Server Name or dns name~           CHCXSQLADFS01
+Identifiers(creates Identifies=Endpoint=Claim name)~   https://voyager.expedia.com,https://voyager.expedia.biz
+
+#Production SQL~		CHCXSQLADFS01
+#Lab~ 					CHCLSQLADFS01
+
+#How to use
+#please do not rename the file. Currently script is hard coded to use 
+#Future versions will allow you to specify config file, not this one.
+#please do not reorder the lines and do not remove the ~ delimiter.
+#Quotes are not necessary.
+
+#Also, remember that line 1 of config file is a header, so it's ignored.
+#Powershell reads config file as an array and first array entry is 0, so line 2 is array entry 0.
+#In short, Line 2 = 0, 11=9
+

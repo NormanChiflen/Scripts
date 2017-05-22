@@ -1,0 +1,13 @@
+setup.yml
+---
+- hosts: all
+user: root
+vars_files:
+- vars/settings-default.yml
+tasks:
+- name: PHP configuration file, php.ini
+action: template src=templates/etc-php5-apache2-php-ini.j2 dest=/etc/php5/apache2/php.ini
+notify: Restart Apache
+handlers:
+- name: Restart Apache
+action: service name=apache2 state=restarted

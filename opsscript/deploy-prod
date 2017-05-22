@@ -1,0 +1,188 @@
+#!/bin/bash
+#
+# deploy-prod - Deploy Production Tomcat's for Voyager.
+#               usage: deploy-prod -t training -v 2.0.1
+#               usage: deploy-prod -t prod -v 2.0.1
+
+# sort out our options
+while getopts ":v:t:" opt; do
+case $opt in
+  v)
+    version=$OPTARG
+    ;;
+  t)
+    type=$OPTARG
+    ;;
+esac
+done
+
+basedir=/var/tmp
+repobase="http://chexutlrep001/cct/deployment"
+webapps=/var/tomcat/webapps
+appconfig=/var/tomcat/appconfig
+whoami=`whoami`
+
+if [ -z "${version}" ]
+         then
+                echo ERROR: Version not specified
+                exit 1
+        fi
+
+if [ -z "${type}" ]
+        then
+                echo ERROR: Type not specified
+                exit 1
+        fi
+
+if [ "$whoami" != "tomcat"  ]
+        then
+                echo "ERROR: You need to be the tomcat user to execute this script"
+                exit 1
+        fi
+
+
+if [ $type == "prod" ]
+        then
+                warfile=${repobase}/com.expedia.ngat.service-${version}.war
+                configjar=${repobase}/com.expedia.ngat.service-config-${version}.jar
+
+elif [ $type == "training" ]
+        then
+                warfile=${repobase}/com.expedia.ngat.training.service-${version}.war
+                configjar=${repobase}/com.expedia.ngat.training.service-config-${version}.jar
+        else
+                echo "ERROR: Type specified is not service or training"
+                exit 1
+        fi
+
+if [ ! -d "$webapps" ]
+        then
+                echo "ERROR: Cannot find directory: $webapps"
+                exit 1
+        fi
+
+if [ ! -d "$appconfig" ]
+        then
+                echo "ERROR: Cannot find directory: $appconfig"
+                exit 1
+        fi
+
+
+echo "INFO: Downloading the following WAR File $warfile "
+wget -nc $warfile -P $basedir > /dev/null
+echo "INFO: Downloading the following JAR File $configjar "
+wget -nc $configjar -P $basedir > /dev/null
+
+        if [ $type == "prod" ]
+        then
+                location_warfile=${basedir}/com.expedia.ngat.service-${version}.war
+		location_jarfile=${basedir}/com.expedia.ngat.service-config-${version}.jar
+
+        elif [ $type == "training" ]
+        then
+                location_warfile=${basedir}/com.expedia.ngat.training.service-${version}.war
+		location_jarfile=${basedir}/com.expedia.ngat.training.service-config-${version}.jar
+        else
+                echo "ERROR: Type specified is not service or training"
+                exit 1
+        fi
+
+if [ ! -f "$location_warfile" ]
+        then
+                echo "ERROR: Cannot find war file: $location_warfile"
+                exit 1
+        fi
+
+if [ ! -f "$location_jarfile" ]
+        then
+                echo "ERROR: Cannot find war file: $location_jarfile"
+                exit 1
+        fi
+
+echo "INFO: Backing up appconfig directory to /home/tomcat/appconfig_${instance}_backup-`date +%s`.tgz"
+tar cvfz /home/tomcat/appconfig_${instance}_backup-`date +%s`.tgz ${appconfig} > /dev/null 2>&1
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Failed to backup $appconfig"
+                exit 1
+        fi
+
+echo "INFO: Clearing $appconfig"
+rm -rf ${appconfig}/*
+
+echo "INFO: Stopping all tomcat instances"
+tcs=`ls -1 /etc/init.d/tomcat-*`
+for tc in $tcs ; do bash $tc stop ; done
+
+if [ -d "${webapps}/ngat-service" ]
+        then
+                echo "INFO: Clearing ${webapps}/ngat-service"
+                rm -rf ${webapps}/ngat-service
+
+                if [ $? == "1" ]
+                        then
+                                echo "ERROR: Failed to clear ${webapps}/ngat-service"
+                                exit 1
+                fi
+
+        else
+                echo "INFO: No expanded war found"
+        fi
+
+if [ -f "${webapps}/ngat-service.war" ]
+        then
+                echo "INFO: Clearing ${webapps}/ngat-service.war"
+                rm -rf ${webapps}/ngat-service.war
+
+                if [ $? == "1" ]
+                        then
+                                echo "ERROR: Failed to clear ${webapps}/ngat-service.war"
+                                exit 1
+                fi
+
+        else
+                echo "INFO: No war file found"
+        fi
+
+echo "INFO: Clearing Temp"
+rm -rf /var/tomcat/servers/*/temp/*
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Failed to clear temp"
+                exit 1
+        fi
+
+echo "INFO: Clearing work"
+rm -rf /var/tomcat/servers/VOY*/work/*
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Failed to clear work"
+                exit 1
+        fi
+
+echo "INFO: Copying War $location_warfile file to $webapps"
+cp $location_warfile ${webapps}/ngat-service.war
+
+echo "INFO: Unzipping $location_jarfile into $appconfig"
+cd $appconfig
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Unable to switch to $appconfig directory"
+                exit 1
+        fi
+
+unzip $location_jarfile > /dev/null
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Unable unzip $location_jarfile"
+                exit 1
+        fi
+
+
+echo "INFO: Starting all tomcat instances"
+for tc in $tcs ; do bash $tc start ; done

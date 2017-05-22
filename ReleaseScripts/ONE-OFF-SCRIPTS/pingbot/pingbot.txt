@@ -1,0 +1,85 @@
+\registry\machine\software\expedia\travelserver\pingbot
+    MailTo = cruzlab@expedia.com
+    Bots
+        crzping
+            DLL = crzping.dll
+            LoggingEnabled = REG_DWORD 0x00000000
+            CRSLoggingEnabled = REG_DWORD 0x00000000
+            CruiseLineIDs = 1,7,8,10
+            FCRequestPeriod = REG_DWORD 0x0000ea60
+            FCRequestTimeout = REG_DWORD 0x00007530
+            FCQueryLevel = REG_DWORD 0x00000003
+            SailingDateOffset = REG_DWORD 0x000000b4
+            SailingDateWindow = REG_DWORD 0x0000000e
+            DNUTLSBR01
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR01
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR02
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR02
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR03
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR03
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR04
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR04
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR05
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR05
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR06
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR06
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR07
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR07
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR08
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR07
+                FCServerPort = REG_DWORD 0x00001d8e
+            DNUTLSBR09
+                Param = 
+                WakeUpTime = REG_DWORD 0xffffffff
+                TPIDs = 1
+                RunNow = REG_DWORD 0x00000000
+                StopNow = REG_DWORD 0x00000000
+                FCServerName = DNUTLSBR07
+                FCServerPort = REG_DWORD 0x00001d8e

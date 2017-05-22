@@ -1,0 +1,5 @@
+for /l %%i in (1,1,4) do (robocopy \\dnfil01\ops\Scripts\Hotfix \\dnwbmtpa0%%i\c$\bin\hotfix /w:1 /r:1 /MIR)
+for /l %%i in (1,1,2) do (robocopy \\dnfil01\ops\Scripts\Hotfix \\dnwbotpa0%%i\c$\bin\hotfix /w:1 /r:1 /MIR)
+for /l %%i in (1,1,4) do (robocopy \\dnfil01\ops\Scripts\Hotfix \\dntvhtpa0%%i\c$\bin\hotfix /w:1 /r:1 /MIR)
+for /l %%i in (1,1,2) do (robocopy \\dnfil01\ops\Scripts\Hotfix \\dnfdstpa0%%i\c$\bin\hotfix /w:1 /r:1 /MIR)
+for /l %%i in (1,1,2) do (robocopy \\dnfil01\ops\Scripts\Hotfix \\dnbottpa0%%i\c$\bin\hotfix /w:1 /r:1 /MIR)

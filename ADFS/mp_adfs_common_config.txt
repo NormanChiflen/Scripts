@@ -1,0 +1,24 @@
+Description~                                           Value
+ADFS account name~                                     cctlab\s-adfs
+ADFS account password~                                 Password1!
+IIS Cert location~                                     C:\cct_ops\Deploymnet\ADFS\lab\cctlab.expecn.com\cctlab.expecn.com.pfx
+IIS Cert password~                                     fosursy
+Signing Cert location~                                 C:\cct_ops\Deploymnet\ADFS\lab\cctadfssigning.cctlab.expecn.com\cctadfssigning.cctlab.expecn.com.pfx
+Signing Cert password~                                 jobukip
+Decrypting Cert location~                              C:\cct_ops\Deploymnet\ADFS\lab\cctadfsdecrypting.cctlab.expecn.com\cctadfsdecrypting.cctlab.expecn.com.pfx
+Decrypting Cert password~                              edspojea
+Netscaler or FederationServiceName~                    mptoken-project.cctlab.expecn.com
+Primary ADFS Server(consumed by secondary only)~       CHELADFSMPT001.cctlab.expecn.com
+Provisioning cert location~                            C:\cct_ops\Deploymnet\ADFS\lab\cctprovisioning.cctlab.expecn.com\cctprovisioning.cctlab.expecn.com.pfx
+Provisioning cert password~                            catsaud
+
+#How to use
+#please do not rename the file. Currently script is hard coded to use 
+#Future versions will allow you to specify config file, not this one.
+#please do not reorder the lines and do not remove the ~ delimiter.
+#Quotes are not necessary.
+
+#Also, remember that line 1 of config file is a header, so it's ignored.
+#Powershell reads config file as an array and first array entry is 0, so line 2 is array entry 0.
+#In short, Line 2 = 0, 11=9
+

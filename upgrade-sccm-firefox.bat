@@ -1,0 +1,7 @@
+#his update script (.cmd) can be executed via different methods (SMS/SCCM/other management tools, PsExec or another remote execution tool, Immediate/Scheduled Task, logon script etc.):
+
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Mozilla\Mozilla Firefox" /ve | findstr 25.0.1 & if ERRORLEVEL 1 (xcopy /C /Y /Z \\server\share\update.mar "%TMP%\" & xcopy /C /Y "%PROGRAMFILES(x86)%\Mozilla Firefox\updater.exe" "%TMP%\" & xcopy /C /Y "%PROGRAMFILES(x86)%\Mozilla Maintenance Service\updater.ini" "%TMP%\" & sc start MozillaMaintenance software-update software-update "%TMP%\updater.exe" "%TMP%" "%PROGRAMFILES(x86)%\Mozilla Firefox" "%PROGRAMFILES(x86)%\Mozilla Firefox\firefox.exe" 0)
+
+#It's a single statement/line (adjust the registry path, %TMP%, and %PROGRAMFILES(x86)% as relevant). To ensure that the script runs only once when executed using certain methods (for example logon script), findstr (via reg query) checks for the existence of 25.0.1 (an example new version to update to), and the subsequent copy and service commands are executed only if it doesn't exist or is different (ERRORLEVEL returns 1), otherwise the subsequent commands are skipped.
+
+#The MozillaMaintenance service calls the Firefox updater, so a standard account can be used to execute this script (if using SRP/AppLocker use a relevant account instead, and also adjust the paths used.). Also, currently running Firefox instances on the clients doesn't hinder the update.

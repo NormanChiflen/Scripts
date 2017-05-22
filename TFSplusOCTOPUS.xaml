@@ -1,0 +1,101 @@
+<Sequence DisplayName=“Deploy Using Octopus“ sap:VirtualizedContainerService.HintSize=“860,1441“>
+
+      <sap:WorkflowViewStateService.ViewState>
+
+        <scg:Dictionary x:TypeArguments=“x:String, x:Object“>
+
+          <x:Boolean x:Key=“IsExpanded“>True</x:Boolean>
+
+        </scg:Dictionary>
+
+      </sap:WorkflowViewStateService.ViewState>
+
+      <sba:CreateNuget DisplayName=“Create Nuget for Database“ sap:VirtualizedContainerService.HintSize=“464,22“ NugetFailed=“[NugetFailed]“ NuspecPath=“[PrimaryDatabaseNuspecPath]“ OutputDirectory=“[NugetRepositoryDirectory]“ TimeoutMilliseconds=“[Timeout]“ VerboseLogging=“False“ />
+
+      <sba:CreateNuget DisplayName=“Create Nuget for Site“ sap:VirtualizedContainerService.HintSize=“464,22“ NugetFailed=“[NugetFailed]“ NuspecPath=“[PrimarySiteNuspecPath]“ OutputDirectory=“[NugetRepositoryDirectory]“ TimeoutMilliseconds=“[Timeout]“ VerboseLogging=“False“ />
+
+      <sba:CreateNuget DisplayName=“Create Nuget for MTA Scheduling Service“ sap:VirtualizedContainerService.HintSize=“464,22“ NugetFailed=“[NugetFailed]“ NuspecPath=“[MtaSchedulingServiceNuspecPath]“ OutputDirectory=“[NugetRepositoryDirectory]“ TimeoutMilliseconds=“[Timeout]“ VerboseLogging=“False“ />
+
+      <If Condition=“[NugetFailed]“ sap:VirtualizedContainerService.HintSize=“464,309“>
+
+        <If.Then>
+
+          <Sequence DisplayName=“Nuget failed“ sap:VirtualizedContainerService.HintSize=“279,208“>
+
+            <sap:WorkflowViewStateService.ViewState>
+
+              <scg:Dictionary x:TypeArguments=“x:String, x:Object“>
+
+                <x:Boolean x:Key=“IsExpanded“>True</x:Boolean>
+
+              </scg:Dictionary>
+
+            </sap:WorkflowViewStateService.ViewState>
+
+            <mtbwa1:SetBuildProperties DisplayName=“Set build status failed“ sap:VirtualizedContainerService.HintSize=“200,22“ PropertiesToSet=“Status“ Status=“[Microsoft.TeamFoundation.Build.Client.BuildStatus.Failed]“ />
+
+            <TerminateWorkflow sap:VirtualizedContainerService.HintSize=“200,22“ Reason=“Nuget creation failure“ />
+
+          </Sequence>
+
+        </If.Then>
+
+      </If>
+
+      <sba:CreateOctopusRelease DeployEnvironment=“[DeployEnvironment]“ DeployFailed=“[OctopusReleaseCreationFailed]“ sap:VirtualizedContainerService.HintSize=“464,22“ OctopusServerUrl=“[OctopusServerUrl]“ Project=“[Project]“ TimeoutMilliseconds=“[OctopusTimeout]“ />
+
+      <If Condition=“[OctopusReleaseCreationFailed]“ sap:VirtualizedContainerService.HintSize=“464,309“>
+
+        <If.Then>
+
+          <Sequence DisplayName=“Deploy failed“ sap:VirtualizedContainerService.HintSize=“279,208“>
+
+            <sap:WorkflowViewStateService.ViewState>
+
+              <scg:Dictionary x:TypeArguments=“x:String, x:Object“>
+
+                <x:Boolean x:Key=“IsExpanded“>True</x:Boolean>
+
+              </scg:Dictionary>
+
+            </sap:WorkflowViewStateService.ViewState>
+
+            <mtbwa1:SetBuildProperties DisplayName=“Set build status failed“ sap:VirtualizedContainerService.HintSize=“200,22“ PropertiesToSet=“Status“ Status=“[Microsoft.TeamFoundation.Build.Client.BuildStatus.Failed]“ />
+
+            <TerminateWorkflow sap:VirtualizedContainerService.HintSize=“200,22“ Reason=“Octopus release creation failure“ />
+
+          </Sequence>
+
+        </If.Then>
+
+      </If>
+
+      <sba:DetermineDeploymentState ConnectionString=“[ConnectionString]“ sap:VirtualizedContainerService.HintSize=“464,22“ OctopusProject=“[Project]“ PingInterval=“[OctopusDeploymentStatePingInterval]“ Succeeded=“[OctopusDeploySucceeded]“ TimeOut=“[OctopusTimeout]“ />
+
+      <If Condition=“[Not OctopusDeploySucceeded]“ sap:VirtualizedContainerService.HintSize=“464,309“>
+
+        <If.Then>
+
+          <Sequence DisplayName=“Octopus Deploy failed“ sap:VirtualizedContainerService.HintSize=“279,208“>
+
+            <sap:WorkflowViewStateService.ViewState>
+
+              <scg:Dictionary x:TypeArguments=“x:String, x:Object“>
+
+                <x:Boolean x:Key=“IsExpanded“>True</x:Boolean>
+
+              </scg:Dictionary>
+
+            </sap:WorkflowViewStateService.ViewState>
+
+            <mtbwa1:SetBuildProperties DisplayName=“Set build status failed“ sap:VirtualizedContainerService.HintSize=“200,22“ PropertiesToSet=“Status“ Status=“[Microsoft.TeamFoundation.Build.Client.BuildStatus.Failed]“ />
+
+            <TerminateWorkflow sap:VirtualizedContainerService.HintSize=“200,22“ Reason=“Octopus deploy failure“ />
+
+          </Sequence>
+
+        </If.Then>
+
+      </If>
+
+    </Sequence>

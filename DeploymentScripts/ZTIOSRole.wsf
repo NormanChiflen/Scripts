@@ -1,0 +1,600 @@
+<job id="ZTIOSRole">
+	<script language="VBScript" src="ZTIUtility.vbs"/>
+	<script language="VBScript">
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      ZTIOSRole.wsf
+' // 
+' // Version:   5.1.1642.01
+' // 
+' // Purpose:   Install the specified operating system roles
+' // 
+' // Usage:     cscript.exe [//nologo] ZTIOSRole.wsf [/debug:true]
+' // 
+' // ***************************************************************************
+
+Option Explicit
+RunNewInstance
+
+
+'//----------------------------------------------------------------------------
+'//  Global Constants
+'//----------------------------------------------------------------------------
+
+' No global constants needed
+
+
+'//----------------------------------------------------------------------------
+'//  Main Class
+'//----------------------------------------------------------------------------
+
+Class ZTIOSRole
+
+	'//----------------------------------------------------------------------------
+	'//  Class instance variable declarations
+	'//----------------------------------------------------------------------------
+
+	Dim iRetVal
+	Dim dicItems
+	Dim iSvrMgrVal
+	Dim sFoundFile
+	Dim bReboot
+
+	'//----------------------------------------------------------------------------
+	'//  Constructor to initialize needed global objects
+	'//----------------------------------------------------------------------------
+
+	Private Sub Class_Initialize
+	
+	End Sub
+	
+	
+	'//----------------------------------------------------------------------------
+	'//  Main routine
+	'//----------------------------------------------------------------------------
+
+	Function Main
+
+		Dim iRetVal
+		Dim sValue
+		
+		iSvrMgrVal = oUtility.FindFile( "ServerManager.xml" , sFoundFile)
+		TestAndFail iSvrMgrVal, 9000, "Did not find ServerManager.xml"
+
+		iRetVal = Success
+
+
+		' Abort If there is nothing to do at this point
+
+		If oEnvironment.Item("OSVersion") = "WinPE" then
+
+			oLogging.CreateEntry "This script should only run in the full OS.", LogTypeError
+			Main = Failure
+			Exit Function
+
+		End if
+
+
+		' Create a dictionary to hold all the items, to simplify things later
+
+		Set dicItems = CreateObject("Scripting.Dictionary")
+		dicItems.CompareMode = vbTextCompare
+
+
+		' Log what items have been requested
+
+		If oEnvironment.Item("OSRoles") = "" then
+			oLogging.CreateEntry "No roles were requested.", LogTypeInfo
+		Else
+			oLogging.CreateEntry "Roles requested for installation:", LogTypeInfo
+			For each sValue in Split(oEnvironment.Item("OSRoles"), ",")
+				oLogging.CreateEntry "  " & sValue, LogTypeInfo
+				If not dicItems.Exists(sValue) then
+					dicItems.Add sValue, "Role"
+				End If
+			Next
+		End if
+
+		If oEnvironment.Item("OSRoleServices") = "" then
+			oLogging.CreateEntry "No role services were requested.", LogTypeInfo
+		Else
+			oLogging.CreateEntry "Role services requested for installation:", LogTypeInfo
+			For each sValue in Split(oEnvironment.Item("OSRoleServices"), ",")
+				oLogging.CreateEntry "  " & sValue, LogTypeInfo
+				If not dicItems.Exists(sValue) then
+					dicItems.Add sValue, "RoleService"
+				End If
+			Next
+		End if
+
+		If oEnvironment.Item("OSFeatures") = "" then
+			oLogging.CreateEntry "No features were requested.", LogTypeInfo
+		Else
+			oLogging.CreateEntry "Features requested for installation:", LogTypeInfo
+			For each sValue in Split(oEnvironment.Item("OSFeatures"), ",")
+				oLogging.CreateEntry "  " & sValue, LogTypeInfo
+				If not dicItems.Exists(sValue) then
+					dicItems.Add sValue, "Feature"
+				End If
+			Next
+		End if
+
+
+		' If no items have been requested, quit now
+
+		If dicItems.Count = 0 then
+			oLogging.CreateEntry "No roles, role services, or features were requested, exiting.", LogTypeInfo
+			Main = Success
+			Exit Function
+		End if
+
+
+		' Install the requested roles depending on the running OS
+
+		Select Case oEnvironment.Item("OSVersion")
+		Case "2003"
+
+			'Perform server 2003 role installation
+			iRetVal = InstallServer2k3Roles()
+			TestAndLog iRetVal, "Server 2003 Role Installation"
+			
+		Case "Vista"
+
+			oLogging.CreateEntry "Windows Vista is not presently supported.", LogTypeInfo
+
+		Case "2008"
+
+			If (UCASE(oEnvironment.Item("IsServerCoreOS")) = "TRUE") then
+
+				'Perform Server core Role Installation
+				iRetVal = InstallServerCoreRoles()
+				TestAndLog iRetVal, "Server 2008 Core Role Installation"
+
+			Else
+				'Perform Longhorn Server Role Installation
+				iRetVal = InstallLHRoles()
+				TestAndLog iRetVal, "Server 2008 Role Installation" 
+
+			End if
+			
+		Case "Win7Client"
+			'Perform Windows 7 Feature installation
+			iRetVal = InstallWin7ClientFeatures()
+
+		Case "2008R2"
+
+			If (UCASE(oEnvironment.Item("IsServerCoreOS")) = "TRUE") then
+
+				'Perform Server core Role Installation
+				iRetVal = InstallServerCoreRoles()
+				TestAndLog iRetVal, "Server 2008 R2 Core Role Installation"
+				
+			Else
+				'Perform Longhorn Server Role Installation
+				iRetVal = InstallLHRoles()
+				TestAndLog iRetVal, "Server 2008 R2 Role Installation"
+			End if
+
+		End Select
+
+
+		' ---------------------------------------------------------------------------
+		' Do Role installation post install actions - restart
+		' ---------------------------------------------------------------------------
+
+		If iRetVal = 3010 then  ' Reboot requested
+
+			' Set property to indicate a reboot is needed
+
+			oEnvironment.Item("SMSTSRebootRequested") = "true"
+			oLogging.CreateEntry "Set SMSTSRebootRequested to initiate a reboot.", LogTypeInfo
+
+		End if
+
+		Main = Success
+
+
+	End Function
+
+
+
+	'//---------------------------------------------------------------------------
+	'//  Function:	InstallServer2k3Roles()
+	'//---------------------------------------------------------------------------
+	Function InstallServer2k3Roles()
+
+		Dim iRetval
+		Dim strSystemroot
+		Dim objRoot
+		Dim osAnsFile
+		Dim sInfPath
+		Dim sAnsPath
+		Dim strComputer
+		Dim objReg
+		Dim strKeyPath
+		Dim strOSSource
+		Dim sCmd
+
+
+		oLogging.CreateEntry "Preparing to install roles for Windows Server 2003", LogTypeInfo
+
+		' Make sure source paths are set properly
+
+		On Error Resume Next
+		strOSSource = oShell.RegRead("HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Setup\SourcePath")
+		If Err then
+			oLogging.CreateEntry "OS Source path not set, unable to install roles.", LogTypeError
+			InstallServer2k3Roles = Failure
+			EXIT FUNCTION
+		End if
+		oLogging.CreateEntry "Source Path = " & strOSSource, LogTypeInfo
+
+
+		' Build the answer file
+
+		oLogging.CreateEntry "Building Server 2003 answer file for SYSOCMGR", LogTypeInfo
+
+		sAnsPath = oEnv("TEMP") & "\OCAns.txt"
+		strSystemroot = oEnv("SYSTEMROOT")
+
+		sInfPath = strSystemroot & "\Inf\Sysoc.inf"
+
+		If (not oFSO.FileExists(sInfPath)) then
+			oLogging.CreateEntry "Unable to find " & sInfPath & ", unable to execute SYSOCMGR.", LogTypeError
+			InstallServer2k3Roles = Failure
+			Exit Function
+		End if
+
+		Set osAnsFile = oFSO.CreateTextFile(sAnsPath,true,False)
+
+
+		' Write section name to the answer file
+
+		osAnsFile.WriteLine("[Components]")
+
+
+		' If any network roles are specified, enable network optional components
+
+		If dicItems.Exists("DNS") or dicItems.Exists("DHCP") or dicItems.Exists("WINS-Server") then
+			osAnsFile.Writeline("netoc = On")
+		End if
+
+
+		'  Install options for IIS server
+
+		If dicItems.Exists("Web-Server") then
+			osAnsFile.Writeline("iis_asp = on")
+			osAnsFile.Writeline("iis_common = on")
+			osAnsFile.Writeline("iis_inetmgr = on")
+			osAnsFile.Writeline("iis_www = on")
+			osAnsFile.Writeline("complusnetwork = on")
+			osAnsFile.Writeline("aspnet = on")
+		End if
+
+
+		' Install options for Teminal Server
+
+		If dicItems.Exists("Terminal-Services") then
+			osAnsFile.Writeline("TerminalServer = on")
+			osAnsFile.Writeline("LicenseServer = on")
+		End if
+
+
+		' Install options for Windows Deployment Services
+
+		If dicItems.Exists("WDS") then
+			osAnsFile.Writeline("reminst = on")
+		End if
+
+
+		' Network optional components
+
+		If dicItems.Exists("DNS") or dicItems.Exists("DHCP") or dicItems.Exists("WINS-Server") then
+			osAnsFile.Writeline("[NetOptionalComponents]")
+		End if
+
+
+		' Write net optional components to the answer file
+
+		If dicItems.Exists("DNS") then
+			osAnsFile.Writeline("DNS = 1")
+		End if
+		If dicItems.Exists("DHCP") then
+			osAnsFile.Writeline("DHCPServer = 1")
+		End if
+		If dicItems.Exists("WINS-Server") then
+			osAnsFile.Writeline("WINS = 1")
+		End if
+
+		osAnsFile.Close
+
+
+		' Execute SYSOCMGR
+
+		sCmd = "Sysocmgr.exe /i:""" & sInfPath & """ /u:""" & sAnsPath & """ /r"
+		oLogging.CreateEntry "About to execute command: " & sCmd, LogTypeInfo
+
+		On Error Resume Next
+		iRetval = oShell.Run(sCmd, 1, true)
+		If Err then
+			iRetVal = Err.Number
+			oLogging.CreateEntry "ERROR executing command " & sCmd & ": " & Err.Description & " (" & Err.Number & ")", LogTypeError
+		ElseIf iRetval <> 0 and iRetVal <> 3010 then
+			oLogging.CreateEntry "ERROR - Role installation with SYSOCMGR failed, rc = " & iRetVal, LogTypeError
+		Else
+			oLogging.CreateEntry "Roles Installation succeeded, rc = " & iRetVal, LogTypeInfo
+		End if
+
+		InstallServer2k3Roles = iRetval
+
+	End Function
+
+
+	'//---------------------------------------------------------------------------
+	'//  Install Server 2008 Roles
+	'//---------------------------------------------------------------------------
+	Function InstallLHRoles()
+
+		Dim iRetVal
+		Dim oRolesXml
+		Dim sPath
+		Dim oRolenode
+		Dim sCmd
+		Dim sKey
+
+
+		oLogging.CreateEntry "Preparing to install roles for Windows Server 2008 using ServerManagerCmd", LogTypeInfo
+
+
+		' Generate answer file
+
+		Set oRolesXml = oUtility.CreateXMLDOMObject
+		oRolesXml.LoadXML "<?xml version=""1.0"" encoding=""utf-8"" ?><ServerManagerConfiguration Action=""Install"" xmlns=""http://schemas.microsoft.com/sdm/Windows/ServerManager/Configuration/2007/1""></ServerManagerConfiguration>"
+
+		For each sKey in dicItems.Keys
+
+			Set oRolenode = oRolesXml.CreateNode("element", dicItems(sKey), "http://schemas.microsoft.com/sdm/Windows/ServerManager/Configuration/2007/1")
+			oRolenode.SetAttribute "Id", sKey
+			oRolesXml.documentElement.appendchild(oRolenode)
+			Set oRolenode = Nothing
+
+		Next
+
+		sPath = oEnv("TEMP")  & "\Roles.xml"
+		oRolesXml.Save sPath
+		oLogging.CreateEntry "Saved role answer file to " & sPath, LogTypeInfo
+
+
+		' Find ServerManagerCmd.  First check system32, then sysnative (only valid on a 64-bit OS running
+		' in a WOW 32-bit process), and finally hope that it is somewhere in the path.
+
+		If oFSO.FileExists(oEnv("SystemRoot") & "\system32\ServerManagerCmd.exe") then
+			sCmd = oEnv("SystemRoot") & "\system32\ServerManagerCmd.exe"
+		ElseIf oFSO.FileExists(oEnv("SystemRoot") & "\sysnative\ServerManagerCmd.exe") then
+			sCmd = oEnv("SystemRoot") & "\sysnative\ServerManagerCmd.exe"
+		Else
+			sCmd = "ServerManagerCmd.exe"
+		End if
+
+
+		' Execute the command
+			
+		sCmd = sCmd & " -inputpath """ & sPath & """ -LogPath " & oEnv("TEMP")  & "\ServerMgr.log"
+		oLogging.CreateEntry "About to execute command: " & sCmd, LogTypeInfo
+
+		On Error Resume Next
+		iRetVal = oShell.Run(sCmd, 0, true)
+		If Err then
+			iRetVal = Err.Number
+			oLogging.CreateEntry "ERROR executing command " & sCmd & ": " & Err.Description & " (" & Err.Number & ")", LogTypeError
+		ElseIf iRetVal = 1003 then
+			oLogging.CreateEntry "Role installation with ServerManagerCmd.exe returned non-zero. 1003 = No change.", LogTypeInfo
+		ElseIf iRetVal <> 0 and iRetVal <> 3010 then
+			oLogging.CreateEntry "ERROR - Role installation with ServerManagerCmd.exe failed, rc = " & iRetVal, LogTypeError
+		Else
+			oLogging.CreateEntry "Roles Installation succeeded, rc = " & iRetVal, LogTypeInfo
+		End if
+		On Error Goto 0
+
+		InstallLHRoles = iRetVal
+
+	End Function
+
+	'//---------------------------------------------------------------------------
+	'//  Install Server 2008 Core Roles
+	'//---------------------------------------------------------------------------
+
+	Function InstallServerCoreRoles()
+
+		Dim iErrors
+		Dim sCoreAttribute
+		Dim sKey
+		Dim oItem
+
+
+		' Execute OCSetup for each specified role
+		iErrors = 0
+		bReboot = false
+		oLogging.CreateEntry "Preparing to install roles for Windows Server 2008 or Windows Server 2008 R2 using OCSetup", LogTypeInfo
+		
+		if iSvrMgrVal = SUCCESS then
+		    For each sKey in dicItems.Keys
+    		    
+    		    For each oItem in oUtility.CreateXMLDOMObjectEx(sFoundFile).selectNodes("//*[@Id='" & sKey & "' and @CoreId]")
+    		        sCoreAttribute = oItem.getAttribute("CoreId")
+    		        
+    		        If sCoreAttribute = "ADDS" Then
+			           oLogging.CreateEntry "ADDS role does not need to be installed since DCPROMO will install it.", LogTypeInfo
+    		        ElseIf trim(sCoreAttribute) <> "" Then
+    		           iErrors = iErrors + InstallCoreRole(sCoreAttribute)
+    		        End If
+    		    Next
+		    Next
+		End if
+
+		If iErrors > 0 then
+			oLogging.CreateEntry "One or more roles were not installed successfully", LogTypeInfo
+			InstallServerCoreRoles = Failure
+		Else
+			oLogging.CreateEntry "Role installation complete.", LogTypeInfo
+			If bReboot then
+				InstallServerCoreRoles = 3010
+			Else
+				InstallServerCoreRoles = Success
+			End if
+		End if
+
+	End Function
+
+	'//---------------------------------------------------------------------------
+	'//  Install Windows 7 Features
+	'//---------------------------------------------------------------------------
+	Function InstallWin7ClientFeatures()
+
+		Dim iErrors
+		Dim sCoreAttribute
+		Dim sKey
+		Dim oItem
+
+
+		' Execute DISM for each specified role
+
+		iErrors = 0
+		bReboot = false
+		oLogging.CreateEntry "Preparing to install roles for Windows 7 client using DISM tool", LogTypeInfo
+		
+		If iSvrMgrVal = SUCCESS then
+		    For each sKey in dicItems.Keys
+    		    
+    		    For each oItem in oUtility.CreateXMLDOMObjectEx(sFoundFile).selectNodes("//*[@Id='" & sKey & "' and @Win7Id]")
+    		        sCoreAttribute = oItem.getAttribute("Win7Id")
+    		        
+    		        If sCoreAttribute = "ADDS" Then
+			           oLogging.CreateEntry "ADDS role can't be installed on the client operating system.", LogTypeInfo
+    		        ElseIf trim(sCoreAttribute) <> "" Then
+    		           iErrors = iErrors + InstallWin7Feature(sCoreAttribute)
+    		        End If
+    		    Next
+		    Next
+		End if
+
+		If iErrors > 0 then
+			oLogging.CreateEntry "One or more roles were not installed successfully", LogTypeInfo
+			InstallWin7ClientFeatures = Failure
+		Else
+			oLogging.CreateEntry "Role installation complete.", LogTypeInfo
+			If bReboot then
+				InstallWin7ClientFeatures = 3010
+			Else
+				InstallWin7ClientFeatures = Success
+			End if
+		End if
+
+	End Function
+
+	Function InstallCoreRole(sRoleName)
+
+		Dim iRetval
+		Dim sCmd
+
+		iRetVal = 0
+
+
+		' Find OCSetup.exe.  First check system32, then sysnative (only valid on a 64-bit OS running
+		' in a WOW 32-bit process), and finally hope that it is somewhere in the path.
+
+		If oFSO.FileExists(oEnv("SystemRoot") & "\system32\OCSetup.exe") then
+			sCmd = oEnv("SystemRoot") & "\system32\OCSetup.exe"
+		ElseIf oFSO.FileExists(oEnv("SystemRoot") & "\sysnative\OCSetup.exe") then
+			sCmd = oEnv("SystemRoot") & "\sysnative\OCSetup.exe"
+		Else
+			sCmd = "OCSetup.exe"
+		End if
+
+
+		' Install the specified role
+
+		sCmd = "cmd.exe /C " & sCmd & " " & sRoleName & " /norestart"
+		oLogging.CreateEntry "About to execute command: " & sCmd, LogTypeInfo
+
+		On Error Resume Next
+		iRetVal = oShell.Run(sCmd, 0, true)
+		If Err then
+			iRetVal = 1
+			oLogging.CreateEntry "ERROR executing command " & sCmd & ": " & Err.Description & " (" & Err.Number & ")", LogTypeError
+		ElseIf iRetVal <> 0 and iRetVal <> 3010 then
+			oLogging.CreateEntry "ERROR - " & sRoleName & " role installation with OCSetup.exe failed, rc = " & iRetVal, LogTypeError
+			iRetVal = 1
+		Else
+			oLogging.CreateEntry sRoleName & " role installation succeeded, rc = " & iRetVal, LogTypeInfo
+			If iRetVal = 3010 then
+				bReboot = true
+			End if
+			iRetVal = 0
+		End if
+		On Error Goto 0
+
+		InstallCoreRole = iRetval
+
+	End Function
+	
+	Function InstallWin7Feature(sFeatureName)
+
+		Dim iRetval
+		Dim sCmd
+
+		iRetVal = 0
+
+
+		' Find DISM.exe.  First check system32, then sysnative (only valid on a 64-bit OS running
+		' in a WOW 32-bit process), and finally hope that it is somewhere in the path.
+
+		If oFSO.FileExists(oEnv("SystemRoot") & "\system32\DISM.exe") then
+			sCmd = oEnv("SystemRoot") & "\system32\DISM.exe"
+		ElseIf oFSO.FileExists(oEnv("SystemRoot") & "\sysnative\DISM.exe") then
+			sCmd = oEnv("SystemRoot") & "\sysnative\DISM.exe"
+		Else
+			sCmd = "DISM.exe"
+		End if
+
+
+		' Install the specified role
+
+		sCmd = "cmd.exe /C " & sCmd & " /Online /Enable-Feature /FeatureName:" & sFeatureName
+		oLogging.CreateEntry "About to execute command: " & sCmd, LogTypeInfo
+
+		On Error Resume Next
+		iRetVal = oShell.Run(sCmd, 0, true)
+		If Err then
+			iRetVal = 1
+			oLogging.CreateEntry "ERROR executing command " & sCmd & ": " & Err.Description & " (" & Err.Number & ")", LogTypeError
+		ElseIf iRetVal <> 0 and iRetVal <> 3010 then
+			If iRetVal = 50 Then
+				oLogging.CreateEntry "ERROR - " & sFeatureName & " role installation with DISM.exe failed. Parent feature needs to be installed before installing this feature. rc = " & iRetVal, LogTypeError
+			Else
+				oLogging.CreateEntry "ERROR - " & sFeatureName & " role installation with DISM.exe failed, rc = " & iRetVal, LogTypeError				
+			End If
+			iRetVal = 1
+		Else
+			oLogging.CreateEntry sFeatureName & " role installation succeeded, rc = " & iRetVal, LogTypeInfo
+			If iRetVal = 3010 then
+				bReboot = true
+			End if
+			iRetVal = 0
+		End if
+		On Error Goto 0
+
+		InstallWin7Feature = iRetval
+
+	End Function
+
+
+End Class
+
+	</script>
+</job>

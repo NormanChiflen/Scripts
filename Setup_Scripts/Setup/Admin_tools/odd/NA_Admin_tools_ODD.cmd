@@ -1,0 +1,1 @@
+start psexec \\DNWBOAMR01 -u expeso\%1 -p %2 c:\bin\hotfix\setup.cmd AMR-WBO %1 %2

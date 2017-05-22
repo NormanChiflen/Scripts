@@ -1,0 +1,36 @@
+\registry\machine\software\expedia\travelserver\genbot\bots\ratesnifferbot
+    DLL = RateSnifferBot.dll
+    Expedia
+        Active = REG_DWORD 0x00000001
+        Param = 
+        RunNow = REG_DWORD 0x00000000
+        StopNow = REG_DWORD 0x00000000
+        TerminateOnWakeup = REG_DWORD 0x00000000
+        TPIDs = 1,4
+        WakeUpTimes = 1800
+        DOW = REG_DWORD 0x00000040
+        Target = EXP
+        Cities = AllCity
+        StartDateDelay = REG_DWORD 0x00000006
+        NumDays = REG_DWORD 0x0000003c
+        NumAdults = REG_DWORD 0x00000002
+        LengthOfStay = REG_DWORD 0x00000001
+        DebugLevel = REG_DWORD 0x00000000
+        MaxThreads = REG_DWORD 0x00000002
+    GDS
+        Active = REG_DWORD 0x00000000
+        Param = 
+        RunNow = REG_DWORD 0x00000000
+        StopNow = REG_DWORD 0x00000000
+        TerminateOnWakeup = REG_DWORD 0x00000000
+        TPIDs = 1,4
+        WakeUpTimes = 1800
+        DOW = REG_DWORD 0x00000040
+        Target = GDS
+        Cities = AllCity
+        StartDateDelay = REG_DWORD 0x00000006
+        NumDays = REG_DWORD 0x0000003c
+        MaxThreads = REG_DWORD 0x0000000a
+        NumAdults = REG_DWORD 0x00000002
+        LengthOfStay = REG_DWORD 0x00000001
+        DebugLevel = REG_DWORD 0x00000000

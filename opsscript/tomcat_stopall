@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for script in /etc/init.d/tomcat-voy*
+do
+        [ ! -f $script ] && continue
+        $script stop
+done

@@ -1,0 +1,12 @@
+
+Mon Apr 25 19:12:37 2005
+ 
+DS Backup IVR Node Un-Shunt completed 
+ 
+Un-Shunt applied to the following servers: 
+ 
+DSWBAIVR01
+DSWBAIVR02 
+ 
+ 
+Note: You may close this text file 

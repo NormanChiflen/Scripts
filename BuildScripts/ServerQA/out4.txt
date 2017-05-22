@@ -1,0 +1,37 @@
+PHEDWBSHPA002,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,24.0 GB,C: 36.0 GB,D: 100.7 GB,E: 136.7 GB,10.202.128.98 
+PHEDWBTLAT003,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,24.0 GB,C: 36.0 GB,D: 100.7 GB,E: 136.7 GB,10.202.128.99 
+PHEDWBSHTL006,Microsoft(R) Windows(R) Server 2003, Enterprise Edition,24.0 GB,C: 50.0 GB,D: 50.0 GB,E: 36.0 GB,10.202.128.106 
+PHEDWBTLAT004,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,24.0 GB,C: 36.0 GB,D: 100.7 GB,E: 136.7 GB,10.202.128.100 
+PHEDWBSHTL007,Microsoft(R) Windows(R) Server 2003, Enterprise Edition,24.0 GB,C: 50.0 GB,D: 50.0 GB,E: 36.0 GB,10.202.128.107 
+PHEDWBSHTL008,Microsoft(R) Windows(R) Server 2003, Enterprise Edition,24.0 GB,C: 50.0 GB,D: 50.0 GB,E: 36.0 GB,10.202.128.108 
+PHEDTVMAMR031,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.153.44 
+PHEDTVMAMR036,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.153.49 
+PHEDTVHLISD045,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.229 
+PHEDTVMEUR006,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.154.19 
+PHEDTVHLISD046,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.230 
+PHEDTVXAMR003,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.155.60 
+PHEDTVHLIB015,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.155.48 
+PHEDTVHLISE011,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.12 
+PHEDTVHLISE013,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.14 
+PHEDTVHLISE015,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.16 
+PHEDTVHLISE017,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.18 
+PHEDTVHLISGG019,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.71 
+PHEDTVHLISGG020,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.72 
+PHEDTVHLISB013,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.92 
+PHEDTVHLISB028,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.107 
+PHEDTVHLISB053,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.127 
+PHEDTVHLISB055,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.129 
+PHEDTVHLISC020,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.149 
+PHEDTVHLISE048,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.47 
+PHEDTVHLISE049,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.48 
+PHEDTVHLISC021,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.150 
+PHEDTVHLISC023,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.152 
+PHEDTVHLISC025,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.154 
+PHEDTVHLISE052,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.51 
+PHEDTVHLISC026,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.155 
+PHEDTVHLISGG001,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.53 
+PHEDTVHLISGG003,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.55 
+PHEDTVHLISGG004,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.56 
+PHEDTVHLISGG006,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.58 
+PHEDTVHLISGG008,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.159.60 
+PHEDTVHLISC041,Microsoft(R) Windows(R) Server 2003 Enterprise x64 Edition,96.0 GB,C: 36.0 GB,D: 100.0 GB,E: 136.7 GB,10.202.158.170 

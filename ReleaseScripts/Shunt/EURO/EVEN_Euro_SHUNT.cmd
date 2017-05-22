@@ -1,0 +1,24 @@
+c:\localbin\choice /t:n,10 Are you sure you want to SHUNT the Even Euro Webs?
+if errorlevel 2 goto :EOF
+
+for %%i in (
+DNWBMEURDE02
+DNWBMEURDE04
+DNWBMEURDE06
+DNWBMEUREU02
+DNWBMEUREU04
+DNWBMEURFR02
+DNWBMEURFR04
+DNWBMEURFR06
+DNWBMEURFR08
+DNWBMEURUK02
+DNWBMEURUK04
+DNWBMEURUK06
+DNWBMEURUK08
+DNWBMEURUK10
+DNWBMEURUK12
+DNWBOEUR02
+DNWBOEUR04
+
+) do (
+regini -m \\%%i \\dnfil01\ops\Scripts\ReleaseScripts\Shunt\WSShunton.ini)

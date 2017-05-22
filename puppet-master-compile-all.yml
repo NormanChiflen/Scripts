@@ -1,0 +1,11 @@
+---
+# usage: ansible-playbook puppet-master-compile-all.yml -i hosts --extra-vars="target_env=ci1 puppet_args='--color=html'"
+
+- name: Compile puppet catalogue for all hosts for a given environment on the puppet master
+  hosts: puppetmaster-int
+  user: ciadmin
+  sudo: yes      # We need to be root
+  tasks:
+    - name: Compile puppet catalogue for in {{ target_env }}
+      command: puppet master {{ puppet_args }} --compile {{ item }} --environment {{ target_env }}
+      with_items: groups['ci1']

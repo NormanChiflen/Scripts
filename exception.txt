@@ -1,0 +1,49 @@
+$ErrorActionPreference = "Stop"
+try
+{
+    $session = New-PSSession -ComputerName 'SCLABSCSM'
+    Invoke-Command -Session $session -scriptblock {
+        $recordTypeProjection = "System.WorkItem.ReleaseRecordProjection"
+        $templateDisplayName = "Default Release Record"
+        $RecordObjectID = "RR12387"
+         
+        Import-Module smlets
+        $recordTemplate = get-scsmobjecttemplate | Where {$_.DisplayName -eq $templateDisplayName}
+        $recordObjectProjection = get-scsmobjectprojection (get-scsmtypeprojection $recordTypeProjection) | where-Object {$_.Id -eq $RecordObjectID}
+        Set-SCSMobjecttemplate -projection $recordObjectProjection -Template $recordTemplate
+    }
+    $recordObjectProjection = Invoke-Command -Session $session -ScriptBlock { $recordObjectProjection }
+}
+catch
+{
+    Throw $_.Exception
+	# 
+}
+
+{
+$ErrorActionPreference = "Stop"
+try
+{
+    $session = New-PSSession -ComputerName '\`d.T.~Ed/{C594FD3B-7A2F-4508-BD54-9EB56704A25D}.SCSMServer\`d.T.~Ed/'
+    Invoke-Command -Session $session -scriptblock {
+        $recordTypeProjection = "System.WorkItem.ReleaseRecordProjection"
+        $templateDisplayName = "\`d.T.~Ed/{DCECAA66-900C-402E-8848-DC8FF673DC71}.{DDCDFC3B-2534-459A-9051-CD93010C6322}\`d.T.~Ed/"
+        $RecordObjectID = "\`d.T.~Ed/{9697D41B-D620-4E2D-96B7-B93CEE428CFE}.Id\`d.T.~Ed/"
+         
+        Import-Module smlets
+        $recordTemplate = get-scsmobjecttemplate | Where {$_.DisplayName -eq $templateDisplayName}
+        $recordObjectProjection = get-scsmobjectprojection (get-scsmtypeprojection $recordTypeProjection) | where-Object {$_.Id -eq $RecordObjectID}
+        Set-SCSMobjecttemplate -projection $recordObjectProjection -Template $recordTemplate
+    }
+    $recordObjectProjection = Invoke-Command -Session $session -ScriptBlock { $recordObjectProjection }
+}
+catch
+{
+    Throw $_.Exception
+}
+#} | Out-file c:\Script.ps1
+#http://www.thecloudbuilderblog.com/blog/2012/3/10/running-and-debugging-powershell-scripts-with-orchestrator-2.html
+
+
+
+$error.Clear() $errorActionPreference = "SilentlyContinue" & 'C:\OutputCaptureTest.ps1' | out-file C:\results.txt $error | out-file -append C:\results.tx

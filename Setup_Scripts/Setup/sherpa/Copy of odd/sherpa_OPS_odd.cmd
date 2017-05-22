@@ -1,0 +1,1 @@
+start psexec \\DNWBOTPA02 -u expeso\%1 -p %2 c:\bin\hotfix\setup.cmd TPA-WBO %1 %2

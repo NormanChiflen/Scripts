@@ -1,0 +1,1 @@
+for /f %%i in (\\dnfil01\ops\Scripts\ReleaseScripts\NEPAL\guest_access\web_list.txt) do \\dnfil01\c$\devtools\regini.exe -m \\%%i \\dnfil01\ops\Scripts\ReleaseScripts\NEPAL\guest_access\89_access.txt > \\dnfil01\ops\Scripts\ReleaseScripts\NEPAL\guest_access\access_results.txt

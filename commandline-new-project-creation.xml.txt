@@ -1,0 +1,33 @@
+http://blogs.msdn.com/b/granth/archive/2009/09/25/scripting-team-project-creation-in-tfs2010.aspx?ocid=soc-n-eg-elite--MRadwan
+
+How to create a team project from the command line in TFS2010:
+
+Create an XML file with the following contents and save it somewhere (e.g. C:\temp\pcw.xml). Substitute the highlighted as appropriate:
+
+
+<?xml version="1.0" encoding="utf-8"?> 
+<Project xmlns="ProjectCreationSettingsFileSchema.xsd"> 
+       <TFSName>http://tfsserver:8080/tfs/DefaultCollection</TFSName> 
+       <LogFolder>c:\temp</LogFolder> 
+       <ProjectName>TestAgile2</ProjectName> 
+       <ProjectSiteEnabled>true</ProjectSiteEnabled> 
+       <ProjectSiteTitle>TestAgile2</ProjectSiteTitle>                  
+       <ProjectSiteDescription>TestAgile2 project created from command line</ProjectSiteDescription> 
+       <SccCreateType>New</SccCreateType> 
+       <SccBranchFromPath></SccBranchFromPath>                 
+       <ProcessTemplateName>MSF for Agile Software Development v5.0</ProcessTemplateName> 
+</Project>
+ 
+Once you have created the file, you need to prepare Visual Studio to be automated and trigger the automation from the command line.
+1.Open Visual Studio 2010
+2.Go to View > Team Explorer and make sure that the Team Explorer tab is active
+3.Close Visual Studio 2010
+4.Open a command prompt
+5.Type: CD /D %ProgramFiles(x86)%\Microsoft Visual Studio 10.0\Common7\IDE
+6.Type: devenv /command "File.BatchNewTeamProject C:\temp\pcw.xml"
+ 
+At this point, Visual Studio will open and the Team Explorer tab will show “Connecting to server\collection…”.  In the background it’s actually creating the team project. You can verify this by looking for a txt file with the name of your project in the path you specified for LogFolder. (e.g. c:\temp\TestAgile2.txt)
+to create a fully-automated project provisioning system there are a few other things that you’ll need to do on top of creating the team project. Some of these things are:
+•Add users to TFS groups (Project Administrators, Contributors, Readers)
+•Add permissions in sharepoint
+•Add permissions in reporting services

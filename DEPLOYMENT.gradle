@@ -1,0 +1,39 @@
+environments {
+    prod {
+        nodes {
+            n1 {
+                host = "n1-prod"
+                userName = "xxxxx"
+                password = "xxxxx"
+                loadBalancer = 'lb_prod'
+                frontendJkManagerUrl = 'http://apache-prod/jkmanager'
+            }
+            n2 {
+                host = "n2-prod"
+                userName = "xxxxx"
+                password = "xxxxx"
+                loadBalancer = 'lb_prod'
+                frontendJkManagerUrl = 'http://apache-prod/jkmanager'
+            }
+
+            scheduler {
+                name = "n1"
+            }
+        }
+    }
+    dev {
+        nodes {
+            'n1-dev' {
+                host = "n1-dev"
+                userName = "xxxxx"
+                password = "xxxxx"
+                loadBalancer = 'lb_dev'
+                frontendJkManagerUrl = 'http://apache-dev/jkmanager'
+            }
+
+            scheduler {
+                name = "n1-dev"
+            }
+        }
+    }
+}

@@ -1,0 +1,1 @@
+for /F %%a in (groupB9_QRY.txt) do soon \\%%a 201 c:\bin\hotfix\BFS_BFQ_HF.cmd %1 %2 %3

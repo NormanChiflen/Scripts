@@ -1,0 +1,9 @@
+DeploymentUnitName      :       Air
+ImplementedBy           :       CommandLine::CMD
+# Deployment Script Hander is   SCRIPT                                                         Version 
+WebRootDrive		:	E
+IISPoolUser		:	karmalab\_travfusesvc
+IISPoolPassword		:	TravelFusion!5
+ReleaseLocation		:	DirectedBuilds
+PADVersion		:	v1.8.0.2
+CommandLine             :       \\chelt2fil01\Products\Temp\deployment\net\karmalab\T2\APTE\FarmG\depot.agtexpe.products.provideradapter\Deploy-Depot.agtexpe.products.provideradapter.cmd ${WebRootDrive} ${IISPoolUser} ${IISPoolPassword} ${ReleaseLocation} ${PADVersion}

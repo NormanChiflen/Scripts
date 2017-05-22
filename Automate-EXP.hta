@@ -1,0 +1,759 @@
+<!--------------------------------------------------------------------------------
+-- Project        : 
+--
+-- Copyright 2012 Ltd
+--
+-- Name           : Automate
+--
+-- Classification : 
+--
+-- Description    :
+-- TODO: Add Class/Package Description
+--
+-- Author         : Norman Fletcher
+--
+-------------------------------------------------------------------------------->
+
+<html>
+   <head>
+      <HTA:Application
+         ApplicationName = "Automate"
+         Scroll="yes"
+         SingleInstance="yes"
+         WindowState="Normal"
+         SysMenu="Yes"
+         Caption="Yes"
+         Border="thin"
+         MaximizeButton="yes"
+         MinimizeButton="yes"
+         ShowInTaskbar="yes"
+         ScrollFlat="no"
+      >
+      <style type="text/css">
+         body {background-color: rgb(70,73,176)}
+      </style>
+   </head>
+   <script language "JScript">
+      shell = new ActiveXObject("Wscript.shell");
+      fso = new ActiveXObject("Scripting.FileSystemObject");
+      dev_Version_Label = "SI.dev.01.00";
+      int_floating_Version_Label = "SI.int.01.01";
+      int_static_Version_Label = "SI.int.01.00";
+      pmt_Version_Label = "SI.pmt.01.00";
+      i_static_Version_Label = "SI.I10.00";
+      previous_i_static_Version_Label = "I100.00";
+
+	 	  
+	  
+      function Automate()
+      {
+         if (ValidUser())
+         {
+            if  (fso.FileExists(txtCSVFile.value))
+            {
+               Output("Converting " + txtCSVFile.value + " ... ");
+               var inFile = fso.OpenTextFile(txtCSVFile.value, 1 /* For Reading */, false);
+               var outFile = fso.OpenTextFile("Temp.pmt", 2, true);
+               var AutomateList=new Array();
+               //read header line
+               AutomateLine = inFile.ReadLine();
+               // read each line into an array
+               while (!inFile.AtEndOfStream)
+               {
+                  AutomateLine = inFile.ReadLine();
+                  if (AutomateLine.length > 0)
+                  {
+                     // get the parameters
+                     AutomateList = AutomateLine.split(",");
+                     // output TFS list file information
+                     outFile.WriteLine( "-r" + AutomateList[2] + " \"" + AutomateList[0] + "\\" + AutomateList[1] + "-arc\"" );
+                  }
+               }
+               inFile.Close();
+               outFile.Close();
+               Output(" Promoting file ... ");
+               shell.run("cmd /C vcs -xo+eAutomate.err -q -id" + txtTFSUsername.value + ":" + txtPassword.value + " -v" + int_static_Version_Label + " @Temp.pmt", 0, true);
+               shell.run("cmd /C vcs -xo+eAutomate.err -q -id" + txtTFSUsername.value + ":" + txtPassword.value + " -v" + int_floating_Version_Label + ":* @Temp.pmt", 0, true);
+               shell.run("cmd /C move \"C:\\Automate\\" + txtCSVFile.value + "\" \"C:\\Automate\\" + int_static_Version_Label + "\\" + txtCSVFile.value + "\" >> create_copy.log", 0, true);
+               Output(" Finished<br \>");
+               OutputErr();               
+            }
+            else
+            {
+               Output("File not present: " + txtCSVFile.value + "<br \>");
+            }
+         }
+      };
+            
+      function Create()
+      {
+         if (ValidUser())
+         {
+            Output("Creating Automate list file ...");
+            shell.run("cmd /C pcli run -q vlog -fAutomate.out -prY:\\R3 -id" + txtTFSUsername.value + ":" + txtPassword.value + " -bv" + int_static_Version_Label + " -z /", 0, true);
+            Output(" Finished<br \>");
+            OutputErr();
+         }
+      }
+      
+      function Diff()
+      {
+         if (fso.FileExists("Automate.out"))
+         {
+            if (ValidUser())
+            {
+               shell.run("cmd /C pcli run -q get -prY:\\R3 -id" + txtTFSUsername.value + ":" + txtPassword.value + " -v" + pmt_Version_Label + " /Scripts/Automate.lst", 0, true);
+               OutputErr();
+               Output("Diff is processing ...");
+               shell.run("cmd /C BCompare.exe Automate.out Automate.lst", 0, true);
+               Output(" Finished<br \>");
+            }
+         }
+         else
+         {
+            Output("Must create Automate list file first<br \>");
+         }
+            
+      }
+
+      function Update()
+      {
+         if (fso.FileExists("Automate.out"))
+         {
+            if (ValidUser())
+            {
+               if (txtDescription.value != "")
+               {
+                  Output("Checking out current file ...");
+                  shell.run("cmd /C pcli run -q get -prY:\\R3 -id" + txtTFSUsername.value + ":" + txtPassword.value + " -l" + pmt_Version_Label + " /Scripts/Automate.lst", 0, true);
+                  Output(" Finished<br \>");
+                  Output("Updating file ...");
+                  shell.run("cmd /C copy /Y Automate.out Automate.lst", 0, true);
+                  shell.run("cmd /C pcli run put -prY:\\R3 -id" + txtTFSUsername.value + ":" + txtPassword.value + ' -m"' + txtDescription.value + '" -v' + pmt_Version_Label + " -yv /Scripts/Automate.lst", 0, true);
+                  shell.run("cmd /C del /F Automate.lst", 0, true);
+                  Output(" Finished<br \>");
+               }
+               else
+               {
+                  Output("Must supply a Description<br \>");
+               }
+            }
+         }
+         else
+         {
+            Output("Must create Automate list file first<br \>");
+         }
+            
+      }
+
+      function Remove()
+      {
+         if (fso.FileExists("Automate.out"))
+         {
+            shell.run("cmd /C del /F Automate.out", 0, true);
+            Output("Removed created Automate list file<br \>");
+         }
+         else
+         {
+            Output("Must create Automate list file first<br \>");
+         }
+            
+      }
+      
+	  
+	 function TFSExport1()
+	 {
+	 shell.run("cmd /C TFS export http://192.168.1.21/productionrepository/Projects/Test C:\temp\TEST", 0, true);
+	 }
+	  
+	  
+	  function TFSExport()
+	   {
+	   Output("Running TFS script ..."); 
+		   shell.run("cmd /c type P:\coding-test\TFS-SCRIPTS\TFSrevExportAutotagTaskingCompile.bat", 0, true);
+		   Output(" Finished<br \>");
+		   OutputErr();
+	   }
+	   
+	   
+	   function ANSICheck()
+	   {
+	   Output("Please copy source code to directory - ");
+	   shell.run("cmd /c type \\eff\Data_BEE\Temporary Items\Norman-Handover\ANSI.bat", 0, true);
+	   output("ANSI-C check completed");
+	   OutputErr();
+	   }
+	   
+      function Copy()
+      {
+          if (ValidUser())
+          {
+          	Output("Creating directories ...");
+						shell.run("cmd /C MD C:\\Automate\\" + int_static_Version_Label + " > create_copy.log", 0, true);
+						shell.run("cmd /C MD C:\\Automate\\" + int_static_Version_Label + "\\ >> create_copy.log", 0, true);
+						shell.run("cmd /C MD C:\\Automate\\" + int_static_Version_Label + " >> create_copy.log", 0, true);
+						shell.run("cmd /C MD C:\\Automate\\" + int_static_Version_Label + " >> create_copy.log", 0, true);
+						shell.run("cmd /C MD C:\\Int\\" + i_static_Version_Label + " >> create_copy.log", 0, true);
+						shell.run("cmd /C MD C:\\Int\\" + i_static_Version_Label + " >> create_copy.log", 0, true);
+						Output(" Finished<br \>");
+						
+						Output("Copying files ...");
+						shell.run("cmd /C copy \"C:\\Int\\" + previous_i_static_Version_Label + "\" \"C:\\Int\\" + i_static_Version_Label + "\" >> create_copy.log", 0, true);
+						shell.run("cmd /C copy \"C:\\Int\\" + previous_i_static_Version_Label + "\" \"C:\\Int\\" + i_static_Version_Label + "\" >> create_copy.log", 0, true);
+						shell.run("cmd /C copy \"C:\\Int\\" + previous_i_static_Version_Label + "\\Start_TMC.lnk\" \"C:\\Int\\" + i_static_Version_Label + "\\Start_TMC.lnk\" >> create_copy.log", 0, true);
+						shell.run("cmd /C Xcopy \"C:\\Int\\" + previous_i_static_Version_Label + "\" \"C:\\Int\\" + i_static_Version_Label + "\" /E /C /R /I /K /Y >> create_copy.log", 0, true);
+						shell.run("cmd /C Xcopy \"C:\\Int\\" + previous_i_static_Version_Label + "_\" \"C:\\Int\\" + i_static_Version_Label + "_\" /E /C /R /I /K /Y >> create_copy.log", 0, true);
+						shell.run("cmd /C Xcopy \"C:\\Int\\" + previous_i_static_Version_Label + "\" \"C:\\Int\\" + i_static_Version_Label + "\" /E /C /R /I /K /Y >> create_copy.log", 0, true);
+
+						
+						shell.run("cmd /C Xcopy \"C:\\Int\\" + previous_i_static_Version_Label + "\" \"C:\\Int\\" + i_static_Version_Label + "\\\" /E /C /R /I /K /Y >> create_copy.log", 0, true);
+						
+						shell.run("cmd /C Xcopy \"C:\\Int\\" + previous_i_static_Version_Label + "\" \"C:\\Int\\" + i_static_Version_Label + "\" /E /C /R /I /K /Y >> create_copy.log", 0, true);
+						Output(" Finished<br \>");
+          }
+      }
+      
+	  
+	  
+	  
+	  
+      function Build_Ready()
+      {
+      	if (ValidUser())
+        {	
+        	Output("Checking files ...");    	
+	      	shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_Coop_TacNav - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_DF_Tracker_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_DLP_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_DMS_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_ESM_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_HMI_Controller - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_MDSU_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_Own_Vehicle_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_PTD_Controller - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO C_Radar_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO _Replica - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\test (ECHO Yes) ELSE (ECHO test - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\SCMFD (ECHO Yes) ELSE (ECHO SCMFD - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\camel (ECHO Yes) ELSE (ECHO camel - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\otter (ECHO Yes) ELSE (ECHO otter - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\hmts (ECHO Yes) ELSE (ECHO hmts - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\baltic (ECHO Yes) ELSE (ECHO baltic - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO \\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\ (ECHO Yes) ELSE (ECHO \\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Integrity (ECHO Yes) ELSE (ECHO \\Integrity - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\ (ECHO Yes) ELSE (ECHO \\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Types (ECHO Yes) ELSE (ECHO \\Types - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Vendor_Items (ECHO Yes) ELSE (ECHO \\Vendor_Items - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Windows (ECHO Yes) ELSE (ECHO \\Windows - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO IMP\\- No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Windows (ECHO Yes) ELSE (ECHO IMP\\Windows - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "lementation_Interfaces (ECHO Yes) ELSE (ECHO Implementation_Interfaces - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "lementation_Interfaces (ECHO Yes) ELSE (ECHO Implementation_Interfaces - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Socket_Lib (ECHO Yes) ELSE (ECHO Socket_Lib - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\SRS (ECHO Yes) ELSE (ECHO SRS - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\TMC_ASP (ECHO Yes) ELSE (ECHO TMC_ASP - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO TMP\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "_ (ECHO Yes) ELSE (ECHO TMP_ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO TWP\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\ (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO Master\\Generate - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + " (ECHO Yes) ELSE (ECHO Master\\Controller - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Start_TMC.lnk (ECHO Yes) ELSE (ECHO Master\\Start_TMC - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+
+	      	shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_Coop_TacNav - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_DF_Tracker_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_DLP_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_DMS_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_ESM_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_HMI_Controller - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_MDSU_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_Own_Vehicle_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_PTD_Controller - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in C_Radar_HMI - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in _Replica - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\test\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in test - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\SCMFD\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in SCMFD - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\camel\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in camel - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\otter\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in otter - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\hmts\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in hmts - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\baltic\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in baltic - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\Elements\\Elements.C (ECHO Yes) ELSE (ECHO Elements.C in  - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+										
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\test\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\test - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\SCMFD\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\SCMFD - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\camel\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\camel - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\otter\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\otter - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\hmts\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\hmts - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\baltic\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\baltic - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Int_Build\\\\default.int.C (ECHO Yes) ELSE (ECHO Int_Build\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\default.int.C (ECHO Yes) ELSE (ECHO Master - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\test\\default.int.C (ECHO Yes) ELSE (ECHO Master\\test - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\SCMFD\\default.int.C (ECHO Yes) ELSE (ECHO Master\\SCMFD - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\camel\\default.int.C (ECHO Yes) ELSE (ECHO Master\\camel - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\otter\\default.int.C (ECHO Yes) ELSE (ECHO Master\\otter - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\baltic\\default.int.C (ECHO Yes) ELSE (ECHO Master\\baltic - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\\\default.int.C (ECHO Yes) ELSE (ECHO Master\\ - No >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);
+					
+					shell.run("cmd /C IF EXIST C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log (ECHO STOP - Build will fail >> C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log) ELSE (ECHO Build Ready > C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log)", 0, true);		
+	      	Output(" Finished<br \>");
+	      	
+	      	var Check_File = fso.OpenTextFile("C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log", 1, true);
+	      	
+	      	Line = Check_File.ReadLine();
+	      	
+	      	while (!Check_File.AtEndOfStream)
+	        {
+	        	Output(Line);
+	        	Output("<br \>");
+	          Line = Check_File.ReadLine();
+	        }
+	        
+	        Output(Line);
+	        Output("<br \>");
+	        Check_File.close();
+	      	
+	      	shell.run("cmd /Q /C del /F C:\\Int\\" + i_static_Version_Label + "\\Build_Ready.log");
+	      	
+	     	}
+	    }
+	    
+	    function Extract_Numbers()
+      {
+      	if (ValidUser())
+        {	
+        	Output(" extracting Mantis-TICKET numbersn ...");
+					shell.run("cmd /C ECHO  >C:\\Automate\\" + int_static_Version_Label + "\\Mantis-TICKETs_in_Build_" + int_static_Version_Label + ".csv", 0, true);
+					shell.run("cmd /C dir C:\\Automate\\" + int_static_Version_Label + "\\ /b /s >>C:\\Automate\\" + int_static_Version_Label + "\\Mantis-TICKETs_in_Build_" + int_static_Version_Label + ".csv", 0, true);
+					shell.run("cmd /C ECHO IMP >>C:\\Automate\\" + int_static_Version_Label + "\\Mantis-TICKETs_in_Build_" + int_static_Version_Label + ".csv", 0, true);
+					shell.run("cmd /C dir C:\\Automate\\" + int_static_Version_Label + " /b /s >>C:\\Automate\\" + int_static_Version_Label + "\\Mantis-TICKETs_in_Build_" + int_static_Version_Label + ".csv", 0, true);
+					shell.run("cmd /C ECHO TWP >>C:\\Automate\\" + int_static_Version_Label + "\\Mantis-TICKETs_in_Build_" + int_static_Version_Label + ".csv", 0, true);
+					shell.run("cmd /C dir C:\\Automate\\" + int_static_Version_Label + " /b /s >>C:\\Automate\\" + int_static_Version_Label + "\\Mantis-TICKETs_in_Build_" + int_static_Version_Label + ".csv", 0, true);
+					Output(" Finished<br \>");
+				}
+			}	      
+      
+      function ValidUser()
+      {
+         var valid = true;
+         if (txtTFSUsername.value != "" && txtPassword.value != "")
+         {
+            shell.run("cmd /C TFS --username TFSUsername.value --password txtPassword.value", 0, true);
+            var errFile = fso.GetFile("Automate.err");
+            if (errFile.size > 0)
+            {
+               Output("Supplied TFS Username and password invalid<br \>");
+               valid = false;
+            }
+            shell.run("cmd /Q /C del /F Automate.err");
+         }
+         else
+         {
+            Output("Must supply TFS Username and password<br \>");
+            valid = false;
+         }
+         return valid;
+      }
+
+      function OutputErr()
+      {
+         var errFile = fso.OpenTextFile("Automate.err", 1, true);
+         while (!errFile.AtEndOfStream)
+         {
+            AutomateLine = errFile.ReadLine();
+            Output("<font color=red>" + AutomateLine + "</font><br \>");
+         }
+         errFile.close();
+         shell.run("cmd /Q /C del /F Automate.err");
+      }
+
+      function Output(str)
+      {
+         spnOutput.innerHTML += str;
+      }
+      
+   </script>
+
+   <body onload="spnVersion.innerHTML = int_static_Version_Label">
+      
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="90%" valign="Middle">
+      <h1>
+         Expedia Software Release Automation tool <span id ="spnVersion"> </span>
+      </h1>
+      </td>
+      <td width="10%" valign="top">
+         <img src="logo.jpg" />
+      </td>
+      </tr>
+      </table>
+      <hr />
+            
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="60%" valign="top">
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="50%" valign="top">
+      <h2>LDAP</h2>
+      <p>Input the your LDAP account information to use TFS</p>
+      <label>Username:</label>
+      <input name="txtTFSUsername" type="text" size=40></input>
+      <br />
+      <label>Password:</label>
+      <input name="txtPassword" type="password" size=40></input>
+      </td>
+      <td width="50%" valign="top">
+      <h2>Automate</h2>
+      <p>Input the CSV File that was supplied by the developer</p>
+      <label>CSV File:</label>
+      <input name="txtCSVFile" type="text" size=40></input>
+      <br /><br />
+      <input type="button" value="Automate" name="btnAutomate" >
+      </td>
+      </tr>
+      </table>
+      <br /><br /><hr />
+      
+	  
+	 
+	  
+
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="50%" valign="top">
+					  <h2>TFS Branch-Tag</h2>
+					  <p>TFS Branch Tag</p>
+				  </td>
+			  </tr>
+		  </table>
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="6%" valign="top">
+					  <input type="button" value=" TFS-BranchTag " name="TFSExport" onClick="TFSExport()">
+				  </td>
+				  <td width="94%" valign="middle">
+					  TFS Tag
+				  </td>
+			  </tr>
+		  </table>
+		  <br /><br /><hr />
+	
+	  
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="50%" valign="top">
+      <h2>ANSI-C Violation Check</h2>
+      <p>Check for any ANSI violations in code</p>
+      </td>
+      </tr>
+      </table>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" ANSI-CHECK " name="ANSIVerify" onClick="ANSICheck()">
+      </td>
+      <td width="94%" valign="middle">
+      Run this against code before release
+      </td>
+      </tr>
+      </table>
+      <br /><br /><hr />
+	  
+		 
+      
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="50%" valign="top">
+      <h2>Verify</h2>
+      <p>Verify the files Automated are the only changes made</p>
+      </td>
+      </tr>
+      </table>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="  Create  " name="btnCreate" >
+      </td>
+      <td width="94%" valign="middle">
+      Create Automate list file from files
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" Update " name="btnUpdate" >
+      </td>
+      <td width="94%" valign="middle">
+      Update  with the created Automate list file
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <label>Description:</label>
+      </td>
+      <td width="94%" valign="middle">
+      <input name="txtDescription" type="text" size=60></input>
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="     Diff      " name="btnDiff" >
+      </td>
+      <td width="94%" valign="middle">
+      View the difference between the created Automate list files
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="Remove" name="btnRemove" >
+      </td>
+      <td width="94%" valign="middle">
+      Remove the created Automate list file
+      </td>
+      </tr>
+      </table>
+      
+      <br /><br /><hr />
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="50%" valign="top">
+      <h2>Build process</h2>
+      <p>Copy files, TFS Get and check build is ready</p>
+      </td>
+      </tr>
+      </table>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" Create & Copy Files " name="btnCopy" onClick="Copy()">
+      </td>
+      <td width="94%" valign="middle">
+      Create folder and copy files required
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" TFS Get Build " name="btnGET" >
+      </td>
+      <td width="94%" valign="middle">
+      Get all the files from source Control
+      </td>
+      </table>
+      
+      <br /><br /><hr />
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="50%" valign="top">
+      <h2>Build validate and verify</h2>
+      <p>Check build is ready and extract Mantis-TICKET numbers</p>
+      </td>
+      </tr>
+      </table>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" Build Ready? " name="btnReady" onClick="Build_Ready()">
+      </td>
+      <td width="94%" valign="middle">
+      Check files are out and build is ready to run
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" Mantis-TICKET numbers " name="btnExtract" onClick="Extract_Numbers()">
+      </td>
+      <td width="94%" valign="middle">
+      Get the TKT numbers from the Automate files
+      </td>
+      </tr>
+      </table>
+          <br /><br /><hr />
+		  
+		  
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="50%" valign="top">
+					  <h2>BMS Trace Analyser</h2>
+					  <p>Analyse system Trace</p>
+				  </td>
+			  </tr>
+		  </table>
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="6%" valign="top">
+					  <input type="button" value=" BMS-Cell-Analyser " name="btnBMS-Cell" >
+				  </td>
+				  <td width="94%" valign="middle">
+					  Analyse system Trace
+				  </td>
+			  </tr>
+		  </table>
+		  <br /><br /><hr />
+		  
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="50%" valign="top">
+					  <h2>Master Trace Analyser</h2>
+					  <p>Analyse system Trace</p>
+				  </td>
+			  </tr>
+		  </table>
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="6%" valign="top">
+					  <input type="button" value=" Master-Trace-Analyser " name="btnMaster" >
+				  </td>
+				  <td width="94%" valign="middle">
+					  Master Trace Analyser
+				  </td>
+			  </tr>
+		  </table>
+		  <br /><br /><hr />
+		  
+		  
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="50%" valign="top">
+					  <h2>SCMFD</h2>
+					  <p>SCMFD Trace Analyser</p>
+				  </td>
+			  </tr>
+		  </table>
+		  <table border="0" width="100%" cellpadding="10">
+			  <tr>
+				  <td width="6%" valign="top">
+					  <input type="button" value=" Analyse-SCMFD-Trace " name="btnSCMFD" >
+				  </td>
+				  <td width="94%" valign="middle">
+					  SCMFD Trace Analyser
+				  </td>
+			  </tr>
+		  </table>
+		  <br /><br /><hr />
+		  
+
+	
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="50%" valign="top">
+      <h2>Build verify</h2>
+      <p>Checks .ofa's .exe's and .out files for errors</p>
+      </td>
+      </tr>
+      </table>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" Verify build " name="btnWork" >
+      </td>
+      <td width="94%" valign="middle">
+      Check .hex, .exe and .log files
+      </td>
+      </tr>
+      </tr>
+      </table>
+      
+      </td>
+      <td width="40%" valign="top">
+      <h2>Output:</h2>
+      <span id="spnOutput">
+      </span>
+      </td>
+      </tr>
+      </table>
+	  
+	   <small>
+		   <font color = "gray" valign="middle">
+			   Copyright &copy; 2012 <a href = "www.Expedia.com" target = "_blank">Norman Fletcher</a>. All rights reserved.
+			   
+		   </font>
+	   </small>
+   </body>
+</html>

@@ -1,0 +1,345 @@
+<!--------------------------------------------------------------------------------
+-- Project        : MCSP
+--
+-- Copyright 2008 Lockheed Martin Corporation
+--
+-- Name           : Promote.hta
+--
+-- Classification : UKR
+--
+-- Description    :
+-- TODO: Add Class/Package Description
+--
+-- Author         : Ray Scheuerman
+--
+-------------------------------------------------------------------------------->
+
+<html>
+   <head>
+      <HTA:Application
+         ApplicationName = "Promote"
+         Scroll="yes"
+         SingleInstance="yes"
+         WindowState="Normal"
+         SysMenu="Yes"
+         Caption="Yes"
+         Border="thin"
+         MaximizeButton="yes"
+         MinimizeButton="yes"
+         ShowInTaskbar="yes"
+         ScrollFlat="no"
+      >
+      <style type="text/css">
+         body {background-color: rgb(176,176,176)}
+      </style>
+   </head>
+   <script language "JScript">
+      shell = new ActiveXObject("Wscript.shell");
+      fso = new ActiveXObject("Scripting.FileSystemObject");
+      dev_Version_Label = "dev01.00.00";
+      int_floating_Version_Label = "int01.00.00";
+      int_static_Version_Label = "int01.00.00.01";
+      pmt_Version_Label = "pmt01.00.00.01";
+
+      function Promote()
+      {
+         var proceed = true;
+         if (ValidUser())
+         {
+            if (txtPromoteFile.value == "Temp.pmt")
+            {
+               if  (fso.FileExists(txtCSVFile.value))
+               {
+                  Output("Converting CVS ... ");
+                  var inFile = fso.OpenTextFile(txtCVSFile.value, 1 /* For Reading */, false);
+                  var outFile = fso.OpenTextFile(txtPromoteFile.value, 2, true);
+                  var promoteList=new Array();
+                  //read header line
+                  promoteLine = inFile.ReadLine();
+                  // read each line into an array
+                  while (!inFile.AtEndOfStream)
+                  {
+                     promoteLine = inFile.ReadLine();
+                     if (promoteLine.length > 0)
+                     {
+                        // get the parameters
+                        promoteList = promoteLine.split(",");
+                        // output VM list file information
+                        outFile.WriteLine( "-r" + promoteList[2] + " " + promoteList[0] + "\\" + promoteList[1] + "-arc" );
+                     }
+                  }
+                  inFile.Close();
+                  outFile.Close();
+                  Output(" Finished<br \>");
+               }
+               else
+               {
+                  Output("File not present: " + txtCSVFile.value + "<br \>");
+                  proceed = false;
+               }
+            }
+            else if (!fso.FileExists(txtPromoteFile.value))
+            {
+                  Output("File not present: " + txtPromoteFile.value + "<br \>");
+                  proceed = false;
+            }
+            if (proceed)
+            {
+               Output("Promoting file ... ");
+               shell.run("cmd /C vcs -xo+ePromote.err -q -id" + txtRLIUsername.value + ":" + txtPassword.value + " -v" + int_static_Version_Label + " @" + txtPromoteFile.value, 0, true);
+               shell.run("cmd /C vcs -xo+ePromote.err -q -id" + txtRLIUsername.value + ":" + txtPassword.value + " -v" + int_floating_Version_Label + ":* @" + txtPromoteFile.value, 0, true);
+               Output(" Finished<br \>");
+               OutputErr();               
+            }
+         }
+      };
+            
+      function Create()
+      {
+         if (ValidUser())
+         {
+            Output("Creating promote list file ...");
+            shell.run("cmd /C pcli run -q vlog -fPromote.out -prS:\\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -bv" + int_static_Version_Label + " -z /", 0, true);
+            Output(" Finished<br \>");
+            OutputErr();
+         }
+      }
+      
+      function Diff()
+      {
+         if (fso.FileExists("Promote.out"))
+         {
+            if (ValidUser())
+            {
+               shell.run("cmd /C pcli run -q get -prS:\\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -v" + pmt_Version_Label + " /Scripts/Promote.lst", 0, true);
+               OutputErr();
+               Output("Diff is processing ...");
+               shell.run("cmd /C uc -t Promote.out T:\\Code\\Scripts\\Promote.lst", 0, true);
+               Output(" Finished<br \>");
+            }
+         }
+         else
+         {
+            Output("Must create promote list file first<br \>");
+         }
+            
+      }
+
+      function Update()
+      {
+         if (fso.FileExists("Promote.out"))
+         {
+            if (ValidUser())
+            {
+               if (txtDescription.value != "")
+               {
+                  Output("Checking out current file ...");
+                  shell.run("cmd /C pcli run -q get -prS:\\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -l" + pmt_Version_Label + " /Scripts/Promote.lst", 0, true);
+                  Output(" Finished<br \>");
+                  Output("Updating file ...");
+                  shell.run("cmd /C copy /Y Promote.out T:\\Code\\Scripts\\Promote.lst", 0, true);
+                  shell.run("cmd /C pcli run put -prS:\\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + ' -m"' + txtDescription.value + '" -v' + pmt_Version_Label + " -yv /Scripts/Promote.lst", 0, true);
+                  shell.run("cmd /C del /F Promote.out T:\\Code\\Scripts\\Promote.lst", 0, true);
+                  Output(" Finished<br \>");
+               }
+               else
+               {
+                  Output("Must supply a Description<br \>");
+               }
+            }
+         }
+         else
+         {
+            Output("Must create promote list file first<br \>");
+         }
+            
+      }
+
+      function Remove()
+      {
+         if (fso.FileExists("Promote.out"))
+         {
+            shell.run("cmd /C del /F Promote.out", 0, true);
+            Output("Removed created promote list file<br \>");
+         }
+         else
+         {
+            Output("Must create promote list file first<br \>");
+         }
+            
+      }
+      
+      function ValidUser()
+      {
+         var valid = true;
+         if (txtRLIUsername.value != "" && txtPassword.value != "")
+         {
+            shell.run("cmd /C get -xePromote.err -id" + txtRLIUsername.value + ":" + txtPassword.value + " S:\\Code\\archives\\Scripts\\Promote.lst-arc", 0, true);
+            var errFile = fso.GetFile("Promote.err");
+            if (errFile.size > 0)
+            {
+               Output("Supplied RLI Username and password invalid<br \>");
+               valid = false;
+            }
+            shell.run("cmd /Q /C del /F Promote.err Promote.lst");
+         }
+         else
+         {
+            Output("Must supply RLI Username and password<br \>");
+            valid = false;
+         }
+         return valid;
+      }
+
+      function OutputErr()
+      {
+         var errFile = fso.OpenTextFile("Promote.err", 1, true);
+         while (!errFile.AtEndOfStream)
+         {
+            promoteLine = errFile.ReadLine();
+            Output("<font color=red>" + promoteLine + "</font><br \>");
+         }
+         errFile.close();
+         shell.run("cmd /Q /C del /F Promote.err");
+      }
+
+      function Output(str)
+      {
+         spnOutput.innerHTML += str;
+      }
+      
+   </script>
+
+   <body onload="spnVersion.innerHTML = int_floating_Version_Label">
+      
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="90%" valign="Middle">
+      <h1>
+         Tactical Mission Computer Software Promote <span id ="spnVersion"> </span>
+      </h1>
+      </td>
+      <td width="10%" valign="top">
+         <img src="logo.png" />
+      </td>
+      </tr>
+      </table>
+      <hr />
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="40%" valign="top">
+      <h2>RLI</h2>
+      <p>Input the your RLI account information to use VM</p>
+      <label>Username:</label>
+      <input name="txtRLIUsername" type="text" size=40></input>
+      <br />
+      <label>Password:</label>
+      <input name="txtPassword" type="password" size=40></input>
+      </td>
+      <td width="60%" valign="top">
+      <h2>Promote</h2>
+      <p>Input the Area that was supplied by the developer</p>
+      <label>Area</label>
+      <select name="txtPromoteFile">
+         <option value="All.pmt">All</option>
+         <option value="C_Acoustics_HMI.pmt">C_Acoustics_HMI</option>
+         <option value="C_Acoustics_Track.pmt">C_Acoustics_Track</option>
+         <option value="C_ASW_Attack_Tracker.pmt">C_ASW_Attack_Tracker</option>
+         <option value="C_Cursor_Controller.pmt">C_Cursor_Controller</option>
+         <option value="C_Data_Fusion_Track.pmt">C_Data_Fusion_Track</option>
+         <option value="C_Data_Recovery.pmt">C_Data_Recovery</option>
+         <option value="C_DF_Tracker_HMI.pmt">C_DF_Tracker_HMI</option>
+         <option value="C_DLP_HMI.pmt">C_DLP_HMI</option>
+         <option value="C_DMS_HMI.pmt">C_DMS_HMI</option>
+         <option value="C_EMS_HMI.pmt">C_EMS_HMI</option>
+         <option value="C_HMI_Controller.pmt">C_HMI_Controller</option>
+         <option value="C_IM_Host_Controller.pmt">C_IM_Host_Controller</option>
+         <option value="C_MDSU_HMI.pmt">C_MDSU_HMI</option>
+         <option value="C_MDSU_Logger.pmt">C_MDSU_Logger</option>
+         <option value="C_Own_Vehicle_HMI.pmt">C_Own_Vehicle_HMI</option>
+         <option value="C_PTD_Controller.pmt">C_PTD_Controller</option>
+         <option value="C_Radar_HMI.pmt">C_Radar_HMI</option>
+         <option value="C_Renderer.pmt">C_Renderer</option>
+         <option value="C_SMS_HMI.pmt">C_SMS_HMI</option>
+         <option value="C_TacNav_HMI.pmt">C_TacNav_HMI</option>
+         <option value="C_Tactical_Database.pmt">C_Tactical_Database</option>
+         <option value="C_Tactical_Database_Replica.pmt">C_Tactical_Database_Replica</option>
+         <option value="C_Tactical_Item_HMI.pmt">C_Tactical_Item_HMI</option>
+         <option value="C_Tactical_Object_Manager.pmt">C_Tactical_Manager</option>
+         <option value="C_Tote_HMI.pmt">C_Tote_HMI</option>
+         <option value="C_TSD_HMI.pmt">C_TSD_HMI</option>
+         <option value="C_TSU_Controller.pmt">C_TSU_Controller</option>
+         <option value="C_TW_Host_Controller.pmt">C_TW_Host_Controller</option>
+         <option value="C_TW_Training.pmt">C_TW_Training</option>
+         <option value="C_Window_Layout_HMI.pmt">C_Window_Layout_HMI</option>
+         <option value="Common.pmt">Common</option>
+         <option value="IMP_Common.pmt">IMP_Common</option>
+         <option value="TWP_Common.pmt">TWP_Common</option>
+         <option value="SRS_Import.pmt">SRS_Import</option>
+         <option value="Integrity_Build.pmt">Integrity_Build</option>
+         <option value="Temp.pmt">CSV</option>
+      </select>
+      <label> CSV File:</label>
+      <input name="txtCSVFile" type="text" size=40></input>
+      <br /><br />
+      <input type="button" value="Promote" name="btnPromote" onClick="Promote()">
+      </td>
+      </tr>
+      </table>
+      <br /><br /><hr />
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="50%" valign="top">
+      <h2>Verify</h2>
+      <p>Verify the files promoted are the only changes made to VM</p>
+      </td>
+      </tr>
+      </table>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="  Create  " name="btnCreate" onClick="Create()">
+      </td>
+      <td width="94%" valign="middle">
+      Create promote list file from files in VM
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="     Diff      " name="btnDiff" onClick="Diff()">
+      </td>
+      <td width="94%" valign="middle">
+      View the difference between the created promote list file and the promote list file in VM
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <label>Description:</label>
+      </td>
+      <td width="94%" valign="middle">
+      <input name="txtDescription" type="text" size=60></input>
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value=" Update " name="btnUpdate" onClick="Update()">
+      </td>
+      <td width="94%" valign="middle">
+      Update VM with the created promote list file
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="Remove" name="btnRemove" onClick="Remove()">
+      </td>
+      <td width="94%" valign="middle">
+      Remove the created promote list file
+      </td>
+      </tr>
+      </table>
+      <br /><br /><hr />
+      <h2>Output:</h2>
+      <span id="spnOutput">
+      </span>
+   </body>
+</html>

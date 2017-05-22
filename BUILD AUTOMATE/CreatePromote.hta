@@ -1,0 +1,228 @@
+<!--------------------------------------------------------------------------------
+-- Project        : MCSP
+--
+-- Copyright 2008 Lockheed Martin Corporation
+--
+-- Name           : CreatePromote.hta
+--
+-- Classification : UKR
+--
+-- Description    :
+-- TODO: Add Class/Package Description
+--
+-- Author         : Ray Scheuerman
+--
+-------------------------------------------------------------------------------->
+
+<html>
+   <head>
+      <HTA:Application
+         ApplicationName = "CreatePromote"
+         Scroll="yes"
+         SingleInstance="yes"
+         WindowState="Normal"
+         SysMenu="Yes"
+         Caption="Yes"
+         Border="thin"
+         MaximizeButton="yes"
+         MinimizeButton="yes"
+         ShowInTaskbar="yes"
+         ScrollFlat="no"
+      >
+      <style type="text/css">
+         body {background-color: rgb(176,176,176)}
+      </style>
+   </head>
+   <script language "JScript">
+      shell = new ActiveXObject("Wscript.shell");
+      fso = new ActiveXObject("Scripting.FileSystemObject");
+      dev_Version_Label = "dev01.00.00";
+
+      function CreatePromote()
+      {
+         if (ValidUser())
+         {
+            if (txtPromoteFile.value == "All")
+            {
+               Output("Creating All.pmt ...");
+               shell.run("cmd /C pcli run -q vlog -fAll.out -prS:\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -br" + dev_Version_Label + " -z /", 0, true);
+   
+               outFile = fso.OpenTextFile("All.out", 1, true);
+               pmtFile = fso.OpenTextFile("S:\\Promote\\All.pmt", 2, true);
+   
+               createPromoteFile(outFile, pmtFile);
+               
+               outFile.Close();
+               shell.run("cmd /Q /C del /F All.out");
+   
+               Output(" Finished<br \>");
+               pmtFile.Close();
+            }
+            else
+            {
+               outputFile = txtPromoteFile.value + ".out"
+               promoteFile = "S:\\Promote\\" + txtPromoteFile.value + ".pmt"
+               Output("Creating " + promoteFile + " ... ");
+
+               shell.run("cmd /C pcli run -q vlog -f" + outputFile + " -prS:\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -br" + dev_Version_Label + " -z /" + txtPromoteFile.value, 0, true);
+
+               outFile = fso.OpenTextFile(outputFile, 1, true);
+               pmtFile = fso.OpenTextFile(promoteFile, 2, true);
+
+               createPromoteFile(outFile, pmtFile);
+               
+               pmtFile.Close();
+               outFile.Close();
+               shell.run("cmd /Q /C del /F " + outputFile);
+
+               Output(" Finished<br \>");
+               //OutputErr();
+            }
+         }
+      };
+      
+      function createPromoteFile(outFile, pmtFile)
+      {
+         var path=new Array();
+         var rev=new Array();
+
+         // read each line into an array
+         while (!outFile.AtEndOfStream)
+         {
+            // read line with the path
+            pathLine = outFile.ReadLine();
+            // check if any data
+            if (pathLine.length > 0)
+            {
+               // get the path
+               path = pathLine.split("(");
+               // read non used line
+               tempLine = outFile.ReadLine();
+               // read line with revision
+               revLine  = outFile.ReadLine();
+               rev = revLine.split(" ");
+               // read six non used lines
+               tempLine = outFile.ReadLine();
+               tempLine = outFile.ReadLine();
+               tempLine = outFile.ReadLine();
+               tempLine = outFile.ReadLine();
+               tempLine = outFile.ReadLine();
+               tempLine = outFile.ReadLine();
+            
+               // output VM list file information
+               pmtFile.WriteLine( "-r" + rev[1] + " " + path[0] );
+            }
+         }
+      }
+      
+      function ValidUser()
+      {
+         var valid = true;
+         if (txtRLIUsername.value != "" && txtPassword.value != "")
+         {
+            shell.run("cmd /C get -xePromote.err -id" + txtRLIUsername.value + ":" + txtPassword.value + " S:\\Code\\archives\\Scripts\\Promote.lst-arc", 0, true);
+            var errFile = fso.GetFile("Promote.err");
+            if (errFile.size > 0)
+            {
+               Output("Supplied RLI Username and password invalid<br \>");
+               valid = false;
+            }
+            shell.run("cmd /Q /C del /F Promote.err Promote.lst");
+         }
+         else
+         {
+            Output("Must supply RLI Username and password<br \>");
+            valid = false;
+         }
+         return valid;
+      }
+
+      function OutputErr()
+      {
+         var errFile = fso.OpenTextFile("Promote.err", 1, true);
+         while (!errFile.AtEndOfStream)
+         {
+            promoteLine = errFile.ReadLine();
+            Output("<font color=red>" + promoteLine + "</font><br \>");
+         }
+         errFile.close();
+         shell.run("cmd /Q /C del /F Promote.err");
+      }
+
+      function Output(str)
+      {
+         spnOutput.innerHTML += str;
+      }
+      
+   </script>
+
+   <body>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="90%" valign="Middle">
+      <h1>
+         Tactical Mission Computer Software Create Promote 
+      </h1>
+      </td>
+      <td width="10%" valign="top">
+         <img src="logo.png" />
+      </td>
+      </tr>
+      </table>
+      <hr />
+      <h2>RLI</h2>
+      <p>Input the your RLI account information to use VM</p>
+      <label>Username:</label>
+      <input name="txtRLIUsername" type="text" size=40></input>
+      <br />
+      <label>Password:</label>
+      <input name="txtPassword" type="password" size=40></input>
+      <br /><br /><hr />
+      <h2>Promote</h2>
+      <p>This will create a promote list from the dev tag of the area selected.</p>
+      <label>Area</label>
+      <select name="txtPromoteFile">
+         <option value="All">All</option>
+         <option value="C_Acoustics_HMI">C_Acoustics_HMI</option>
+         <option value="C_Acoustics_Track">C_Acoustics_Track</option>
+         <option value="C_ASW_Attack_Tracker">C_ASW_Attack_Tracker</option>
+         <option value="C_Cursor_Controller">C_Cursor_Controller</option>
+         <option value="C_Data_Fusion_Track">C_Data_Fusion_Track</option>
+         <option value="C_Data_Recovery">C_Data_Recovery</option>
+         <option value="C_DF_Tracker_HMI">C_DF_Tracker_HMI</option>
+         <option value="C_DLP_HMI">C_DLP_HMI</option>
+         <option value="C_DMS_HMI">C_DMS_HMI</option>
+         <option value="C_EMS_HMI">C_EMS_HMI</option>
+         <option value="C_HMI_Controller">C_HMI_Controller</option>
+         <option value="C_IM_Host_Controller">C_IM_Host_Controller</option>
+         <option value="C_MDSU_HMI">C_MDSU_HMI</option>
+         <option value="C_MDSU_Logger">C_MDSU_Logger</option>
+         <option value="C_Own_Vehicle_HMI">C_Own_Vehicle_HMI</option>
+         <option value="C_PTD_Controller">C_PTD_Controller</option>
+         <option value="C_Radar_HMI">C_Radar_HMI</option>
+         <option value="C_Renderer">C_Renderer</option>
+         <option value="C_SMS_HMI">C_SMS_HMI</option>
+         <option value="C_TacNav_HMI">C_TacNav_HMI</option>
+         <option value="C_Tactical_Database">C_Tactical_Database</option>
+         <option value="C_Tactical_Database_Replica">C_Tactical_Database_Replica</option>
+         <option value="C_Tactical_Item_HMI">C_Tactical_Item_HMI</option>
+         <option value="C_Tactical_Object_Manager">C_Tactical_Manager</option>
+         <option value="C_Tote_HMI">C_Tote_HMI</option>
+         <option value="C_TSD_HMI">C_TSD_HMI</option>
+         <option value="C_TSU_Controller">C_TSU_Controller</option>
+         <option value="C_TW_Host_Controller">C_TW_Host_Controller</option>
+         <option value="C_TW_Training">C_TW_Training</option>
+         <option value="C_Window_Layout_HMI">C_Window_Layout_HMI</option>
+         <option value="Common">Common</option>
+         <option value="IMP_Common">IMP_Common</option>
+         <option value="TWP_Common">TWP_Common</option>
+         <option value="SRS_Import">SRS_Import</option>
+         <option value="Integrity_Build">Integrity_Build</option>
+      </select>
+      <input type="button" value="Create" name="btnPromote" onClick="CreatePromote()">
+      <br /><br /><hr />
+      <h2>Output:</h2>
+      <span id="spnOutput">
+      </span>
+   </body>
+</html>

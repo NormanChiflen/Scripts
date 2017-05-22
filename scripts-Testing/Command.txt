@@ -1,0 +1,7 @@
+powershell set-executionpolicy unrestricted -force
+rem powershell \\chelt2fil01\Products\LMTesting\scripts\DeployEMain.ps1 -path '\\karmalab.net\builds\ECP\LIVE\160_0\mtt'
+powershell \\chelt2fil01\Products\LMTesting\scripts\DeployEMain.ps1 -path '\\chelt2fil01\Products\LMTesting\mtt'
+
+
+powershell \\chelt2fil01\Products\LMTesting\scripts-Testing\DeployAll.ps1 -path '\\chelt2fil01\Products\LMTesting\mtt' -ini 'T2TLS-CoreInf.ini'
+powershell \\chelt2fil01\Products\LMTesting\scripts-Testing\DeployAll.ps1 -path '\\chelt2fil01\DirectedBuilds\depot\agtexpe\products\air\v3.22.0.52\deliverables\depot.agtexpe.products.air\V3.22.0.52\prop' -ini 'AGTDeploy.ini' -role 'DEPLOY TVA-ALL FarmF'

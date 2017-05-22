@@ -1,0 +1,2 @@
+\registry\machine\software\expedia\shared\filedistributionsystem\publisher\hotelinventory
+    PollOffset_Seconds = REG_DWORD 0x000004b0

@@ -1,0 +1,59 @@
+Ansible inventory file (hosts)
+
+The hosts file is what triggers the ansible magic. Here’s an excerpt.
+
+# BUILD SERVERS ###############################################################
+[puppetmaster-int]
+puppet.company.com
+
+[puppetmaster-ext]
+extpuppet.company.com
+
+[puppetmasters:children]
+puppetmaster-int
+puppetmaster-ext
+
+[puppetmasters:vars]
+puppet_args=""
+
+# System XYZ #######################################################################
+[xyz-ci]
+xyzint6.company.com
+xyzext6.company.com
+
+# PROD
+[xyz-prod-ext]
+xyzext1.company.com
+
+[xyz-prod-ext:vars]
+puppet_server=extpuppet.company.com
+
+[xyz-prod-int]
+xyzint1.company.com
+
+[xyz-prod:children]
+xyz-prod-ext
+xyz-prod-int
+
+...
+
+# ENVIRONMENT AGGREGATION #####################################################
+[ci:children]
+xyz-ci
+pqr-ci
+
+[prod:children]
+xyz-prod
+pqr-prod
+
+[all_envs:children]
+dev
+ci
+st
+qa
+prod
+
+# Global defaults
+[all_envs:vars]
+puppet_args=""
+puppet_server=puppet.company.com

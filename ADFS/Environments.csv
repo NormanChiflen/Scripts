@@ -1,0 +1,7 @@
+Environment,Servers_in_Environment,WebRootFolder,ICRSRealmText,ProvisioningEndpoint
+DEV,chelfedcct01,c:\inetpub\adfs\ls,<TBD>,https://chelfedcct01.cctlab.expecn.com/CCTProvisioningService/AdProvisioning.svc
+PROJECT,chelwebadfs001;chelwebadfs002,c:\inetpub\adfs\ls,<TBD>,https://tokenprovider-project.cctlab.expecn.com/CCTProvisioningService/AdProvisioning.svc
+QA,chclappadfs002;chclappadfs003,c:\inetpub\adfs\ls,10.184.120.19:444 ,https://tokenprovider.cctlab.expecn.com/CCTProvisioningService/AdProvisioning.svc
+INTEGRATION,chelwebe2ecct11;chelwebe2ecct12,c:\inetpub\adfs\ls,icrs-integration.lab.expedia.com,https://tokenprovider-integration.cctlab.expecn.com/CCTProvisioningService/AdProvisioning.svc
+STABLE,chelwebe2ecct36;chelwebe2ecct37,c:\inetpub\adfs\ls,icrs-stable.lab.expedia.com,https://tokenprovider-stable.cctlab.expecn.com/CCTProvisioningService/AdProvisioning.svc
+PROD,CHC-APPADFS01;CHC-APPADFS02;PHEXAPPADFS001;PHEXAPPADFS002;PHEXAPPADFS003,c:\inetpub\adfs\ls,icrs.expedia.com,https://cctoken.expedia.com/CCTProvisioningService/AdProvisioning.svc

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for script in /etc/init.d/tomcat*
+do
+        [ ! -f $script ] && continue
+        $script restart
+done
+

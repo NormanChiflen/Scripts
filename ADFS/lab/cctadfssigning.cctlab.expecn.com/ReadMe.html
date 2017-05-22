@@ -1,0 +1,51 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>SSL Certificate delivery file descriptions</title>
+</head>
+
+<body>
+
+<p><font face="Tahoma" size="2">This ZIP files contains several files that may 
+or may not need to be used for your particular installation.&nbsp; Please see
+<a href="https://certs/faq">https://certs/faq</a> for installation tips.</font></p>
+<p><font face="Tahoma" size="2"><b><i>&lt;host&gt;</i>.crt</b></font></p>
+<p><font face="Tahoma" size="2">This is the Base64 encoded certificate file 
+provided by the certificate authority.&nbsp; It only contains the public key and 
+is safe to be distributed to vendors if this request is being used for 
+client/server authentication.</font></p>
+<p><font face="Tahoma" size="2"><b><i>&lt;host&gt;</i>.pem</b></font></p>
+<p><font face="Tahoma" size="2">This is the Base64 encoded certificate file that 
+contains the private key and all the certificates from the certificate 
+authority.&nbsp; It is typically used for conversion purposes for different 
+applications.&nbsp; </font></p>
+<p><font face="Tahoma" size="2"><b><i>&lt;host&gt;</i>.pfx</b></font></p>
+<p><font face="Tahoma" size="2">Windows can use this file to install both public 
+and private keys as well as the certificate chain.&nbsp; It is a binary file 
+that is DER encoded.</font></p>
+<p><font face="Tahoma" size="2"><b>EntrustRootCA.crt</b></font></p>
+<p><font face="Tahoma" size="2">This file is our vendor supplied public 
+certificate.&nbsp; It should be installed in the Enterprise certificate store.</font></p>
+<p><font face="Tahoma" size="2"><b>EntrustChainCa.crt</b></font></p>
+<p><font face="Tahoma" size="2">This file is our vendor supplied public chain 
+certificate.&nbsp; It should be installed in the Enterprise chain store.&nbsp; 
+We need this because is is the actual authority that issues our certificates.</font></p>
+<p><font face="Tahoma" size="2"><b>InternalChain.crt and InternalRoot.crt</b></font></p>
+<p><font face="Tahoma" size="2">If your certificate was internally generated, 
+this was the infrastructure that did it.&nbsp; Both certificates need to be 
+loaded in the Enterprise store.&nbsp; These are both base 64 encoded and PEM 
+formatted.&nbsp; Please see the FAQ page noted above for 
+instructions.</font></p>
+<p><font face="Tahoma" size="2"><b>MSChain.p7b</b></font></p>
+<p><font face="Tahoma" size="2">This is another format of our internal PKI's 
+authorities certificate list.&nbsp; </font></p>
+
+<p><b><font face="Tahoma" size="2">netscaler.txt</font></b></p>
+<p><font face="Tahoma" size="2">This is a file necessary for installation on a 
+Citrix NetScaler.&nbsp; All others installations can ignore it.</font></p>
+
+</body>
+
+</html>

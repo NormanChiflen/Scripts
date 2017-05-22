@@ -1,0 +1,485 @@
+<!--   
+ 
+Author: Mike Bretzke (mike.bretzke AT healthmarkets DOT com) 
+ 
+Date: August 2007 
+ 
+Purpose: To view all processes on a remote workstation  
+ 
+    and terminate any of those processes at will. 
+ 
+Input: Computer Name, Yes/No to see system-related processes 
+ 
+Output: Listbox of processes, message when one has been terminated 
+ 
+--> 
+ 
+<html> 
+ 
+<head> 
+ 
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252"> 
+ 
+<META HTTP-EQUIV="MSThemeCompatible" CONTENT="Yes"> 
+ 
+<title>Process Killer</title> 
+ 
+<script language="vbscript"> 
+ 
+Option Explicit 
+ 
+Const DOMAINNAME = "FABRIKAM" 'put your domain name here 
+ 
+Dim strComputer             'computer name 
+ 
+Dim arrProcesses()          'list of current processes 
+ 
+Dim arrCommandLines()       'list of command lines that spawned those processes 
+ 
+Dim strProcess              'process to be killed 
+ 
+Dim ProcessCount            'count of processes 
+ 
+Dim x,y 'place window at center of screen 
+ 
+x = (window.screen.width - 500) / 2 
+ 
+y = (window.screen.height - 400) / 2 
+ 
+If x < 0 Then x = 0 
+ 
+If y < 0 Then y = 0 
+ 
+window.resizeTo 500,400 
+ 
+window.moveTo x,y 
+ 
+Sub Window_Onload 'get all workstation names from domain 
+ 
+  Dim arrItems(),i,oFS,oDomain,oAMember,objOption 
+ 
+  i = 0 
+ 
+  Set objOption = Document.createElement("OPTION") 
+ 
+  objOption.Text = "Choose One" 
+ 
+  objOption.Value = "Choose One" 
+ 
+  ProcessList.Add(objOption) 
+ 
+  ComputerBox.Width = 200 
+ 
+  ComputerBox.Value = "Please wait..." 
+ 
+  SleepWait(1) 
+ 
+  Set oFS = CreateObject("Scripting.FileSystemObject") 
+ 
+  Set oDomain = GetObject("WinNT://" & DOMAINNAME) 
+ 
+  For Each oAMember in oDomain 
+ 
+    If oAMember.Class = "Computer" Then 
+ 
+      ReDim Preserve arrItems(i) 
+ 
+      arrItems(i) = oAMember.Name 
+ 
+      i = i + 1 
+ 
+    End If 
+ 
+  Next 
+ 
+  ComputerBox.List = arrItems 
+ 
+  ComputerBox.value = "" 
+ 
+  ComputerBox.focus 
+ 
+  Message_Span.innerHTML = "" 
+ 
+End Sub 
+ 
+Sub GetProcesses(sComputer) 'query workstation and get current processes 
+ 
+  Dim objWMIService,objItem,SWBemlocator,colItems,i,strNameOfUser,objProcess,objOption 
+ 
+  GetProcessButton.value = "Working..." 
+ 
+  ClearProcessListBox 
+ 
+  ProcessCommand.innerHTML = "" 
+ 
+  ResultTable.style.display = "none" 
+ 
+  SleepWait(0) 
+ 
+  i = 0 
+ 
+  If (sComputer <> "") and PingComputer(sComputer) Then 'if PC valid and online then... 
+ 
+    Set SWBemlocator = CreateObject("WbemScripting.SWbemLocator") 
+ 
+    Set objWMIService = SWBemlocator.ConnectServer(sComputer,"root\CIMV2") 
+ 
+    Set colItems = objWMIService.ExecQuery("Select * from Win32_Process",,48) 
+ 
+    For Each objItem in colItems 
+ 
+      objItem.GetOwner strNameOfUser 
+ 
+      If ShowAll.value = "NO" Then 'if we don't want to see system processes 
+ 
+        If (lcase(strNameOfUser) <> "system") And _ 
+           (lcase(strNameOfUser) <> "local service") And _ 
+           (lcase(strNameOfUser) <> "network service") Then 
+ 
+          ReDim Preserve arrProcesses(i) 
+ 
+          ReDim Preserve arrCommandLines(i) 
+ 
+          arrProcesses(i) = lcase(objItem.Name) 
+ 
+          arrCommandLines(i) = objItem.CommandLine 
+ 
+          i = i + 1 
+ 
+        End If 
+ 
+      Else  'if we want to see ALL processes running 
+ 
+        ReDim Preserve arrProcesses(i) 
+ 
+        ReDim Preserve arrCommandLines(i) 
+ 
+        arrProcesses(i) = lcase(objItem.Name) 
+ 
+        arrCommandLines(i) = objItem.CommandLine 
+ 
+        i = i + 1 
+ 
+      End If 
+ 
+    Next 
+ 
+    ProcessCount = i - 1 
+ 
+  Else 'bad PC name or offline 
+ 
+    Message_Span.innerHTML = "<big>Invalid computer name or <br>workstation is offline</big>" 
+ 
+    GetProcessButton.value = "Get<br>Processes" 
+ 
+    SleepWait(0) 
+ 
+    Exit Sub 
+ 
+  End If 
+ 
+  If ProcessCount > 0 Then 'place list in listbox 
+ 
+    For Each objProcess In SortArray(arrProcesses) 
+ 
+      Set objOption = Document.createElement("OPTION") 
+ 
+      objOption.Text = objProcess 
+ 
+      objOption.Value = objProcess 
+ 
+      ProcessList.Add(objOption) 
+ 
+    Next 
+ 
+  Else  'if query came back with no results 
+ 
+    For Each objOption In ProcessList.Options  'clear listbox 
+ 
+      objOption.RemoveNode 
+ 
+    Next 
+ 
+    Set objOption = Document.createElement("OPTION") 
+ 
+    objOption.Text = "No Processes Available" 
+ 
+    objOption.Value = "No Processes Available" 
+ 
+    ProcessList.Add(objOption) 
+ 
+  End If 
+ 
+  GetProcessButton.value = "Get<br>Processes" 
+ 
+  SleepWait(0) 
+ 
+  ResultTable.style.display = "inline" 
+ 
+End Sub 
+ 
+Sub ShowProcessInfo(sProcess) 'display the command line that spawned the process in question. 
+ 
+  Dim i                       'This helps in identifying some processes 
+ 
+  ProcessCommand.innerHTML = "" 
+ 
+  For i = 0 to ubound(arrProcesses) 
+ 
+    If arrProcesses(i) = sProcess Then 
+ 
+      ProcessCommand.innerHTML = arrCommandLines(i) 'display the results 
+ 
+    End If 
+ 
+  Next 
+ 
+  Message_Span.innerHTML = "" 
+ 
+End Sub 
+ 
+Sub KillProcess(sProcess) 'terminate process and display message 
+ 
+  Dim objWMIService, objProcess, colProcess 
+ 
+  If (sProcess <> "Choose One") And _ 
+     (sProcess <> "No Processes Available") Then 
+ 
+    Set objWMIService = GetObject("winmgmts:{impersonationLevel=impersonate}!\\" & strComputer & "\root\cimv2")  
+ 
+    Set colProcess = objWMIService.ExecQuery _ 
+        ("Select * from Win32_Process Where Name = '" & sProcess & "'") 
+ 
+    For Each objProcess in colProcess 
+ 
+      objProcess.Terminate() 
+ 
+    Next  
+ 
+    Message_Span.innerHTML = "<big><i>""" & sProcess & """</i> has been terminated on " & strComputer & "</big>" 
+ 
+    SleepWait(2) 
+ 
+    Message_Span.innerHTML = "" 
+ 
+    GetProcesses strComputer 
+ 
+  Else 
+ 
+    Message_Span.innerHTML = "Invalid Choice" 
+ 
+  End If 
+ 
+End Sub 
+ 
+Sub MainProc 'main procedure 
+ 
+  strComputer = ComputerBox.value 
+ 
+  strProcess = ProcessList.value 
+ 
+  KillProcess strProcess 
+ 
+End Sub 
+ 
+Sub ClearProcessListBox 'empties listbox of entries 
+ 
+  Dim objOption 
+ 
+  For Each objOption In ProcessList.Options  'clear listbox 
+ 
+    objOption.RemoveNode 
+ 
+  Next 
+ 
+  Set objOption = Document.createElement("OPTION") 
+ 
+  objOption.Text = "Choose One" 
+ 
+  objOption.Value = "Choose One" 
+ 
+  ProcessList.Add(objOption) 
+ 
+  Message_Span.innerHTML = "" 
+ 
+End Sub 
+ 
+Function PingComputer(Name) 'pings computer name to determine if online 
+ 
+  Const wbemFlagReturnImmediately = &h10 
+ 
+  Const wbemFlagForwardOnly       = &h20 
+ 
+  Dim objWMIService,colItems,objItem 
+ 
+  Set objWMIService = GetObject("winmgmts:") 
+ 
+  Set colItems = objWMIService.ExecQuery _ 
+      ("Select * from Win32_PingStatus " & _ 
+       "Where Address = '" & Name & "'", "WQL", wbemFlagReturnImmediately + wbemFlagForwardOnly) 
+ 
+  For Each objItem In colItems 
+ 
+    If objItem.ProtocolAddress <> "" Then 
+ 
+      PingComputer = True 
+ 
+    Else 
+ 
+      PingComputer = False 
+ 
+    End If 
+ 
+  Next 
+ 
+End Function 
+ 
+Sub ExitProgram 'Exit Button code 
+ 
+  window.close() 
+ 
+End Sub 
+ 
+Sub SleepWait(seconds) 'Allows application to wait, if needed. 
+ 
+  Dim oShell,cmd 
+ 
+  Set oShell = CreateObject("Wscript.Shell") 
+ 
+  cmd = "%COMSPEC% /c ping -n " & 1 + seconds & " 127.0.0.1>nul" 
+ 
+  oShell.Run cmd,0,1 
+ 
+End Sub 
+ 
+Function SortArray(arrInput) 'sorts enties in array (in conjunction with jscript) 
+ 
+  SortArray = Split(SortVBArray(arrInput), Chr(8)) 
+ 
+End Function 
+ 
+</script> 
+ 
+<script language=JScript runat=server> 
+ 
+function SortVBArray(arrVBArray) { 
+ 
+return arrVBArray.toArray().sort().join('\b'); 
+ 
+} 
+ 
+</script> 
+ 
+<hta:application 
+ 
+  applicationname="ProcessKill"  
+ 
+  border="dialog" 
+ 
+  borderstyle="normal" 
+ 
+  caption="Process Killer" 
+ 
+  contextmenu="no" 
+ 
+  icon="explorer.exe" 
+ 
+  maximizebutton="no" 
+ 
+  minimizebutton="no" 
+ 
+  scroll="no" 
+ 
+  selection="no" 
+ 
+  showintaskbar="yes" 
+ 
+  singleinstance="yes" 
+ 
+  sysmenu="yes" 
+ 
+  windowstate="normal" 
+ 
+> 
+ 
+ 
+ 
+.button1 {font-family=verdana; color:red; font-weight=bold; font-size=20;  
+ 
+          font-variant=small-caps; width=73; height=38} 
+ 
+.button2 {font-family=verdana; font-variant=small-caps; width=90; height=38} 
+ 
+.textfont {font-family=verdana; font-size=12} 
+ 
+body {color:white; filter:progid:DXImageTransform.Microsoft.Gradient 
+ 
+      (GradientType=0, StartColorStr='#000000', EndColorStr='#FF0000')} 
+ 
+H1 {font-family=verdana; font-size=26} 
+ 
+TH {font-family=verdana; font-size=14; font-variant=small-caps;} 
+ 
+ 
+ 
+</head> 
+ 
+<body> 
+ 
+<center> 
+ 
+<h1>Process Killer</h1> 
+ 
+<table border="4" cellspacing="0" cellpadding="3" class="textfont"> 
+ 
+  <tr><th align="right" bgcolor="dimgray">Computer Name</th> 
+ 
+      <td><object classid="clsid:8BD21D30-EC42-11CE-9E0D-00AA006002F3" id="ComputerBox"></object></td> 
+ 
+      <td><button id="GetProcessButton" class="button2" onclick="GetProcesses ComputerBox.value" 
+ 
+            onmouseover=focus>Get<br>Processes</button></td></tr> 
+ 
+  <tr><th align="right" bgcolor="dimgray">Show System Processes</th> 
+ 
+      <td colspan="2"><select id="ShowAll" size="1" style="width=300" class="textfont"> 
+ 
+            <option value="NO">No, do not show system-related processes</option> 
+ 
+            <option value="YES">Yes, show all processes on workstation</option> 
+ 
+          </select></td></tr> 
+ 
+</table> 
+ 
+<p> 
+ 
+<table border="3" id="ResultTable" style="display:none" cellspacing="0" cellpadding="3" class="textfont"> 
+ 
+  <tr><th bgcolor="dimgray" align="right">Processes</th> 
+ 
+      <td><select id="ProcessList" onchange="ShowProcessInfo ProcessList.value"></select></td></tr> 
+ 
+  <tr><th bgcolor="dimgray" align="right">Command Line</th><td><span id="ProcessCommand"></span>&nbsp</td></tr> 
+ 
+</table> 
+ 
+<p> 
+ 
+<table cellspacing="0" cellpadding="7" class="textfont"> 
+ 
+  <tr><td><button id="KillButton" class="button2" onclick="MainProc" onmouseover=focus>Kill<br>Process</button></td> 
+ 
+      <td><button id="ExitButton" class="button1" onclick="ExitProgram" onmouseover=focus>Exit</button></td></tr> 
+ 
+</table> 
+ 
+<p> 
+ 
+<span id="Message_Span" class="textfont"></span> 
+ 
+</center> 
+ 
+</body> 
+ 
+</html> 

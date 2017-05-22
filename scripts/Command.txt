@@ -1,0 +1,25 @@
+: Deployments :
+
+: EMain 
+powershell \\chelt2fil01\Products\LMTesting\scripts\DeployAll.ps1 -path '\\karmalab.net\builds\ECP\LIVE\175_0\mtt' -ini 'T2TLS-CoreInf.ini'
+
+: Air
+powershell \\chelt2fil01\Products\LMTesting\scripts\DeployAll.ps1 -path '\\chelt2fil01\DirectedBuilds\depot\agtexpe\products\air\v3.22.0.52\deliverables\depot.agtexpe.products.air\V3.22.0.52\prop' -ini 'AGTDeploy.ini' -role 'Deploy FDS FarmF'
+powershell \\chelt2fil01\Products\LMTesting\scripts\DeployAll.ps1 -path '\\chelt2fil01\DirectedBuilds\depot\agtexpe\products\air\v3.22.0.52\deliverables\depot.agtexpe.products.air\V3.22.0.52\prop' -ini 'AGTDeploy.ini' -role 'DEPLOY TVA-ALL FarmF'
+
+: DSAPI (WBO/TVD)
+powershell \\chelt2fil01\Products\LMTesting\scripts\DeployAll.ps1 -path '\\karmalab.net\builds\ECP\LIVE\169_0\mtt' -ini 'ini\t2\dsapi.lab.ini'
+
+
+: Powershell :
+
+: Set execution policy
+powershell set-executionpolicy bypass
+
+: Set up WinRM/Powershell
+"\\chelt2fil01\Products\Tools\WinRM-PowerShell\Win2003\x64\Windows Management Framework Core for Windows Server 2003 x64 Edition\WindowsServer2003-KB968930-x64-ENG.exe"
+
+
+E62\175 files:
+powershell \\chelt2fil01\Products\LMTesting\scripts\DeployAll.ps1 -path '\\karmalab.net\builds\ECP\LIVE\175_0\mtt' -ini '\\chelt2fil01\Products\LMTesting\scripts\T2TLS-CoreInf.ini'
+powershell \\chelt2fil01\Products\LMTesting\scripts\DeployAll.ps1 -path '\\karmalab.net\builds\ECP\LIVE\175_0\mtt' -ini '\\chelt2fil01\Products\LMTesting\scripts\dsapi.lab.ini'

@@ -1,0 +1,11 @@
+---
+# usage: ansible-playbook puppet-run.yml -i hosts --forks=12 --extra-vars="hosts=xyz-ci puppet_args='--color=false'"
+
+- name: Run puppet agents for {{ hosts }}
+  hosts: $hosts
+  user: cipuppet
+  tasks:
+    - name: Trigger puppet agent run with args {{ puppet_args }}
+      shell: sudo /usr/bin/puppet agent {{ puppet_args }} --test || if [ $? -eq 2 ]; then echo 'Notice - There were changes'; exit 0; else exit $?; fi;
+      register: puppet_agent_result
+      changed_when: "'Notice - There were changes' in puppet_agent_result.stdout"

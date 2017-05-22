@@ -1,0 +1,1 @@
+for /f %%i in (\\dnfil01\ops\Scripts\ReleaseScripts\NEPAL\guest_access\web_list.txt) do \\dnfil01\c$\devtools\regdmp.exe -m \\%%i \registry\machine\software\expedia\webserver\qscript_accessmask|\\dnfil01\c$\devtools\grep.exe -i 89

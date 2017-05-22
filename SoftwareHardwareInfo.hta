@@ -1,0 +1,87 @@
+<html> 
+<head> 
+<title>Norman:WMI Fletcher</title> 
+ 
+<HTA:APPLICATION  
+     ID="objHTAHelpomatic" 
+     APPLICATIONNAME="Monad" 
+     SCROLL="yes" 
+     SINGLEINSTANCE="yes" 
+     WINDOWSTATE="normal" 
+> 
+</head> 
+ 
+<SCRIPT Language="VBScript"> 
+ 
+set objshell = createobject("Wscript.shell") 
+ 
+Sub GetOSinfo 
+objshell.run "powershell.exe get-wmiobject win32_operatingsystem |sort name | select-object [a-z]*| out-file c:\OS.doc" 
+msgbox "Please find Operating System information in c:\OS.doc" 
+End Sub 
+ 
+Sub GetProcinfo 
+objshell.run "powershell.exe get-wmiobject win32_processor |sort name | select-object [a-z]*| out-file c:\Proc.doc" 
+msgbox "Please find processor information in c:\processor.doc" 
+End Sub 
+ 
+ 
+Sub GetPhymem 
+objshell.run "powershell.exe get-wmiobject CIM_Physicalmemory |sort name | select-object [a-z]*| out-file c:\PM.doc" 
+msgbox "Please find Physical Memory information in c:\PM.doc" 
+End Sub 
+ 
+ 
+Sub GetLogicalDisk 
+objshell.run "powershell.exe get-wmiobject Win32_logicaldisk |sort name | select-object NAME,DESCRIPTION,SIZE,FREESPACE,FILESYSTEM,VOLUMENAME,VOLUMESERIALNUMBER,QUOTASDISABLED|export-csv c:\Disk.csv" 
+msgbox "Please find Logical Disk information in c:\Disk.csv" 
+End Sub 
+ 
+ 
+Sub GetProcess 
+objshell.run "powershell.exe get-wmiobject win32_process |sort name | select-object NAME,PROCESSID,HANDLE,VM,WS,USERMODETIME,KERNELMODETIME,PAGEFAULTS,PAGEFILEUSAGE,COMMANDLINE,EXECUTABLEPATH| export-csv c:\process.csv" 
+msgbox "Please find process information in c:\process.csv" 
+End Sub 
+ 
+ 
+Sub GetService 
+objshell.run "powershell.exe get-wmiobject win32_service |sort name | select-object NAME,STARTED,STARTMODE,STATE,PATHNAME,PROCESSID,STATUS,EXITCODE,ACCEPTSTOP,ACCEPTPAUSE,DESCRIPTION| export-csv c:\service.csv" 
+msgbox "Please find services information in c:\Service.csv" 
+End Sub 
+ 
+ 
+Sub GetSoftware 
+objshell.run "powershell.exe get-wmiobject win32_product |sort name | select-object NAME,VERSION,VENDOR,INSTALLLOCATION,INSTALLDATE,PACKAGECACHE,DESCRIPTION| export-csv c:\software.csv" 
+msgbox "Please find software information in c:\Software.csv" 
+End Sub 
+ 
+ 
+Sub GetHotfix 
+objshell.run "powershell.exe get-wmiobject win32_quickfixengineering |sort name | select-object HOTFIXID,DESCRIPTION,INSTALLEDON,INSTALLEDBY| export-csv c:\hotfix.csv" 
+msgbox "Please find hotfix information in c:\Hotfix.csv" 
+End Sub 
+ 
+ 
+</SCRIPT> 
+ 
+<body bgcolor = "Gray"> 
+<font><b><u>Get Information About</u></b></font><p> 
+ 
+<input id=runbutton  class="button" type="button" value="Operating system" name="run_button"  onClick="GetOSInfo"><p> 
+ 
+<font><b><u>HARDWARE DETAILS</u></b></font><p> 
+<input id=runbutton  class="button" type="button" value="Processor" name="run_button"  onClick="GetProcInfo"> 
+<input id=runbutton  class="button" type="button" value="Physical Memory" name="run_button"  onClick="GetPhyMem"> 
+<input id=runbutton  class="button" type="button" value="Logical Disk" name="run_button"  onClick="GetLogicalDisk"><p> 
+ 
+<font><b><u>PROCESS & SERVICES DETAILS</u></b></font><p> 
+<input id=runbutton  class="button" type="button" value="Processes" name="run_button"  onClick="GetProcess"> 
+<input id=runbutton  class="button" type="button" value="Services" name="run_button"  onClick="GetService"><p> 
+ 
+<font><b><u>SOFTWARE DETAILS</u></b></font><p> 
+<input id=runbutton  class="button" type="button" value="Software Installed" name="run_button"  onClick="GetSoftware"> 
+<input id=runbutton  class="button" type="button" value="Hotfix Installed" name="run_button"  onClick="GetHotfix"><p><p> 
+ 
+<font><b>Author: Norman Fletcher</b></font> 
+</body> 
+</html> 

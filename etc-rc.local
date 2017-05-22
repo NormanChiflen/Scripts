@@ -1,0 +1,14 @@
+FILE=/home/fedora/cloud-build.data
+if [ -f $FILE ];
+then
+   echo "Cloud Data File Found!"
+   echo "Sleeping 30 Seconds"
+   sleep 30
+   echo "Fetching Builder App"
+   wget http://10.110.100.116/pub/cloud-builder.pl -P /home/fedora
+   chmod +x /home/fedora/cloud-builder.pl
+   echo "Executing..."
+   /home/fedora/cloud-builder.pl
+else
+   echo "Cloud Data Config File does not exist...skipping"
+fi

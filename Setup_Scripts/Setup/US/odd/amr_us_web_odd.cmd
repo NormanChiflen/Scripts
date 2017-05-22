@@ -1,0 +1,1 @@
+for /f %%i in (\\dnfil01\ServerLists\DNWBMAMRUSxx_ODD.txt) do start psexec \\%%i -u expeso\%1 -p %2 c:\bin\hotfix\setup.cmd AMR-WBM-US %1 %2

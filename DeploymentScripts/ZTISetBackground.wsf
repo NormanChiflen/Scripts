@@ -1,0 +1,101 @@
+<job id="ZTIConnect">
+   <script language="VBScript" src="ZTIUtility.vbs"/>
+   <script language="VBScript">
+
+' // ***************************************************************************
+' // 
+' // Copyright (c) Microsoft Corporation.  All rights reserved.
+' // 
+' // Microsoft Deployment Toolkit Solution Accelerator
+' //
+' // File:      ZTISetBackground.wsf
+' // 
+' // Version:   5.1.1642.01
+' // 
+' // Purpose:   Solution Accelerator for Business Desktop Deployment
+' // 
+' // Usage:     cscript ZTISetBackground.wsf /image:<imagenumber> [/debug:true]
+' // 
+' // ***************************************************************************
+
+
+Option Explicit
+RunNewInstance
+
+'//----------------------------------------------------------------------------
+'//  Global Constants
+'//----------------------------------------------------------------------------
+
+
+
+
+'//----------------------------------------------------------------------------
+'//  Main Class
+'//----------------------------------------------------------------------------
+
+Class ZTISetBackground
+
+	'//----------------------------------------------------------------------------
+	'//  Global constant and variable declarations
+	'//----------------------------------------------------------------------------
+
+	Dim iRetVal
+
+	'//----------------------------------------------------------------------------
+	'//  Constructor to initialize needed global objects
+	'//----------------------------------------------------------------------------
+
+	Private Sub Class_Initialize
+
+	End Sub
+	
+	
+	'//----------------------------------------------------------------------------
+	'//  Main routine
+	'//----------------------------------------------------------------------------
+
+	Function Main
+	
+		' Local Variables
+		Dim sCmdString, iCmdRetVal
+
+		iRetVal = Success
+
+
+
+
+		If oUtility.Arguments("Image") = "" then
+			oLogging.CreateEntry "A background was not specified, exiting", LogTypeInfo
+			Exit Function
+		End If
+
+		If oEnvironment.Item("Architecture") = "X64" and oEnvironment.Item("OSVersion") = "WinPE" Then
+			oLogging.CreateEntry "BGInfo is not compatible with a 64 bit Windows PE operating system, cannot set a background image", LogTypeInfo
+			Exit Function
+		End If
+
+		If oFSO.FileExists(oEnvironment.Item("DeployRoot") & "\Tools\X86\WindowHide.Exe") Then
+			sCmdString = oEnvironment.Item("DeployRoot") & "\Tools\X86\WindowHide.Exe firstuxwnd"
+			iCMDRetVal = oShell.Run(sCmdString)
+			TestandLog iCMDRetVal, "Failed to hide window"
+		Else
+			oLogging.CreateEntry "Could not find WindowHide.EXE, exiting. ",LogTypeInfo
+			Exit Function
+		End IF 
+		If oFSO.FileExists(oEnvironment.Item("DeployRoot") & "\Tools\X86\BGInfo.Exe") Then
+			sCmdString = oEnvironment.Item("DeployRoot") & "\Tools\X86\BGInfo.Exe " & oEnvironment.Item("DeployRoot") & "\Tools\X86\step_0" & oUtility.Arguments("Image") & ".bgi /nolicprompt /silent /timer:0"
+			oShell.CurrentDirectory = oEnvironment.Item("DeployRoot") & "\Tools\X86"
+			iCMDRetVal = oShell.Run(sCmdString)
+			TestandLog iCMDRetVal, "Failed to set the background"
+		Else
+			oLogging.CreateEntry "Could not find BGInfo.EXE, exiting. ",LogTypeInfo
+			Exit Function
+		End IF 
+		Main = iRetVal
+
+	End Function
+
+End Class
+
+   </script>
+</job>

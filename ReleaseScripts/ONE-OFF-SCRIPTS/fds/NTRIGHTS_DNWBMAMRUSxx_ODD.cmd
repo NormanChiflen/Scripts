@@ -1,0 +1,1 @@
+for /f %%i in (\\dnfil01\serverlists\DNWBMAMRUSxx_ODD.txt) do \\dnrdc02\c$\markus\ntrights.exe -m \\%%i -u expeso\_fdssvc +r SeBatchLogonRight

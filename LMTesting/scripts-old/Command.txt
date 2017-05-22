@@ -1,0 +1,5 @@
+powershell set-executionpolicy unrestricted -force
+rem powershell \\chelt2fil01\Products\LMTesting\scripts\DeployEMain.ps1 -path "\\karmalab.net\builds\ECP\LIVE\160_0\mtt"
+
+
+powershell \\chelt2fil01\Products\LMTesting\scripts-Testing\DeployEMain.ps1 -path "\\chelt2fil01\Products\LMTesting\mtt"

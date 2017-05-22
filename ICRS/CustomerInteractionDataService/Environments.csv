@@ -1,0 +1,7 @@
+Environment,ServersInEnvironment,CustomerInteractionConnectionString,AppPoolUser,AppPoolUserPassword,IISCertificatePath
+DEV,CHELAPPICRS001,server=chelsqlcrm10;database=CustomerInteractions;Integrated Security=SSPI;,karmalab\_RefIdService,EXPedia123,..\..\Voyager_IIS\Deployment\star.karmalab.net.pfx
+PERF,CHELWEBCRM054,server=chelsqlcrm10;database=CustomerInteractions;Integrated Security=SSPI;,karmalab\_RefIdService,EXPedia123,..\..\Voyager_IIS\Deployment\star.karmalab.net.pfx
+QA,CHELWEBCRM78,server=chelsqlcrm05;database=CustomerInteractions;Integrated Security=SSPI;,karmalab\_RefIdService,EXPedia123,..\..\Voyager_IIS\Deployment\star.karmalab.net.pfx
+INTEGRATION,CHEIWEBCCT001;CHEIWEBCCT001,server=TBD;database=CustomerInteractions;Integrated Security=SSPI;,cctlab\_RefIdService,k&*6Qdtu,..\..\Voyager_IIS\Deployment\star.karmalab.net.pfx
+STABLE,CHESWEBCCT001;CHESWEBCCT001,server=TBD;database=CustomerInteractions;Integrated Security=SSPI;,cctlab\_RefIdService,k&*6Qdtu,..\..\Voyager_IIS\Deployment\star.karmalab.net.pfx
+PROD,PHEXWBARID001;PHEXWBARID002,"server=PHEXSQMAAICR002,9999;database=CustomerInteractions;Integrated Security=SSPI;",cct\_RefIdService,<TBD>,..\..\Voyager_IIS\Deployment\prod\[dphillips].expedia.com.pfx

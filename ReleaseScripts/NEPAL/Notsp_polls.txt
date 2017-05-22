@@ -1,0 +1,13 @@
+\registry\machine\software\expedia\travelserver\notsp
+    WorkerThreadsMax = REG_DWORD 0x0000000a
+    PerfDumpIntervalMS = REG_DWORD 0x000493e0
+    PlugIns = fax,insurance,NewTrade
+    PollSleepInterval = REG_DWORD 0x000493e0
+    PendingBatchSize = REG_DWORD 0x00000014
+    UnsendSleepInterval = REG_DWORD 0x000493e0
+    UnsendBatchSize = REG_DWORD 0x00000014
+    TxTimeout = REG_DWORD 0x0002bf20
+    DBWorkers = REG_DWORD 0x00000019
+    RunStatusMon = REG_DWORD 0x00000001
+    RunResendMon = REG_DWORD 0x00000001
+    ApplyNow = REG_DWORD 0x00000001

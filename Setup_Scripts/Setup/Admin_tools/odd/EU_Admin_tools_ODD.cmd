@@ -1,0 +1,1 @@
+start psexec \\DNWBOEUR01 -u expeso\%1 -p %2 c:\bin\hotfix\setup.cmd EUR-WBO %1 %2

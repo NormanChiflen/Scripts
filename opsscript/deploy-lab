@@ -1,0 +1,332 @@
+#!/bin/bash
+#
+# deploy.sh - a simple script to deploy the voyager service environment in DEV / LAB / TRAINING
+#             usage: deploy.sh <INSTANCE> <VERSION> <TYPE>
+#             example: deploy.sh -i VOY01 -v 2.0.1 -t service
+#                      deploy.sh -i VOY01 -v 2.0.1 -t training
+
+# 20120524 - Original script by Dan Kingshott
+# 20120808 - Updated to dynamically handle configjar variable
+# 20120924 - Added chmod -R 755 ${appconfig}
+#
+
+# sort out out options
+while getopts ":i:v:t:e:" opt; do
+case $opt in
+  i)
+    instance=$OPTARG
+    ;;
+  v)
+    version=$OPTARG
+    ;;
+  t)
+    type=$OPTARG
+    ;;
+  e)
+    environment=$OPTARG
+    ;;
+esac
+done
+
+
+#sort out out variables
+basedir=/nfs/build/artifacts
+whoami=`whoami`
+catalina_base=/var/tomcat/servers/$instance
+init_instance=`echo $instance | sed s/VOY/voy/g`
+init_script=/etc/init.d/tomcat-${init_instance}
+tempdir=${catalina_base}/temp
+workdir=${catalina_base}/work
+webapps=${catalina_base}/webapps
+appconfig=${catalina_base}/appconfig
+httpport=`grep http.port ${catalina_base}/conf/catalina.properties  | cut -d"=" -f2`
+
+# debug line
+#echo instance $instance version $version type $type
+
+
+# check our options exists and puke if they aren't
+if [ -z "${instance}" ]
+	then 
+		echo ERROR: Instance not specified
+		exit 1
+	fi
+
+if [ -z "${version}" ]
+	 then 
+		echo ERROR: Version not specified
+	 	exit 1
+	fi
+
+if [ -z "${type}" ]
+	then 
+		echo ERROR: Type not specified
+		exit 1
+	fi
+
+#check something valid has been specified for the type and blow chunks if it's foreign to us
+	if [ $type == "service" ]
+	then
+		warfile=${basedir}/ngat-service/com.expedia.ngat.service-${version}.war
+ 		configjar=${basedir}/config/com.expedia.ngat.service-config-${version}.jar
+
+	elif [ $type == "training" ]
+	then
+		warfile=${basedir}/training/com.expedia.ngat.training.service-${version}.war
+		configjar=${basedir}/training-config/com.expedia.ngat.training.service-config-${version}.jar
+	else
+		echo "ERROR: Type specified is not service or training"
+		exit 1
+	fi
+
+# check the war file exists and call god on the great white telephone if it's missing
+if [ ! -f "$warfile" ]
+	then
+		echo "ERROR: Cannot find war file: $warfile"
+		exit 1
+	fi
+	
+# check the config jar exists, if it's not there, we should call earl and exit stage right
+if [ ! -f "$configjar" ]
+        then
+                echo "ERROR: Cannot find config jar file: $configjar"
+                exit 1
+        fi
+
+# check catalina_base exists, if it doesn't, well by now you know the drill, time to call HUUUUUEY....
+if [ ! -d "$catalina_base" ]
+        then
+                echo "ERROR: Cannot find directory: $catalina_base"
+                exit 1
+        fi
+
+# check the webapps directory exists and barf if we can't find it
+if [ ! -d "$webapps" ]
+        then
+                echo "ERROR: Cannot find directory: $webapps"
+                exit 1
+        fi
+
+# check the work directory exists and loose your lunch if it's missing
+if [ ! -d "$workdir" ]
+        then
+                echo "ERROR: Cannot find directory: $workdir"
+                exit 1
+        fi
+
+
+# check the temp directory exists and do a technicolor yawn if it's not there
+if [ ! -d "$tempdir" ]
+        then
+                echo "ERROR: Cannot find directory: $tempdir"
+                exit 1
+        fi
+
+# check the appconfig directory exists and chunder if we can't find it
+if [ ! -d "$appconfig" ]
+        then
+                echo "ERROR: Cannot find directory: $appconfig"
+                exit 1
+        fi
+
+# now let's ensure the init script is executable and say bye bye if it's not
+if [ ! -x "$init_script" ]
+	then
+		echo "ERROR: Init script $init_script is not executable"
+		exit 1
+	fi
+
+if [ "$whoami" != "tomcat"  ]
+	then
+		echo "ERROR: You need to be the tomcat user to execute this script"
+		exit 1
+	fi
+
+
+#	WHOA.. that was a lot of error checking...
+#	Now we know we're dealing with a valid version, we can find the war file
+#	we can find our config jar and we've validated our directories, I think it's safe
+#	to say we can proceed......
+
+# we need to define our function before we call it, otherwise the script will throw it's cookies out
+function deploy_app(){
+
+# stop the tomcat instance
+echo " "
+bash $init_script stop
+echo " " 
+
+# now the instance is stopped, let's clear the temp and work directories
+echo "INFO: Clearing $tempdir and $workdir"
+rm -rf ${tempdir}/* ${workdir}/*
+
+if [ $? == "1" ]
+	then
+		echo "ERROR: Failed to clear ${tempdir} and ${workdir}"
+		exit 1
+	fi
+
+if [ -d "${webapps}/ngat-service" ]
+	then
+		echo "INFO: Clearing ${webapps}/ngat-service"
+		rm -rf ${webapps}/ngat-service
+
+		if [ $? == "1" ]
+        		then
+                		echo "ERROR: Failed to clear ${webapps}/ngat-service"
+                		exit 1
+        	fi
+
+	else
+		echo "INFO: No expanded war found"
+	fi
+
+if [ -f "${webapps}/ngat-service.war" ]
+        then
+                echo "INFO: Clearing ${webapps}/ngat-service.war"
+                rm -rf ${webapps}/ngat-service.war
+
+                if [ $? == "1" ]
+                        then
+                                echo "ERROR: Failed to clear ${webapps}/ngat-service.war"
+                                exit 1
+                fi
+
+        else
+                echo "INFO: No war file found"
+        fi
+
+echo "INFO: Backing up appconfig directory to /home/tomcat/appconfig_${instance}_backup-`date +%s`.tgz"
+tar cvfz /home/tomcat/appconfig_${instance}_backup-`date +%s`.tgz ${appconfig} > /dev/null 2>&1
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Failed to backup $appconfig"
+                exit 1
+        fi
+
+echo "INFO: Clearing $appconfig"
+chmod -R 755 ${appconfig}/*
+rm -rf ${appconfig}/*
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Failed to clear ${appconfig}"
+                exit 1
+        fi
+
+# All Right, rock and roll, we've done all our prep and stuff now it's time to get down to business :)
+echo "INFO: Copying $warfile to $webapps"
+cp $warfile ${webapps}/ngat-service.war
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Failed to copy $warfile to $webapps"
+                exit 1
+        fi
+
+#Bonza, we've made it this far... let's get the app config directory sorted out
+
+echo "INFO: Unzipping $configjar into $appconfig"
+cd $appconfig
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Unable to switch to $appconfig directory"
+                exit 1
+        fi
+
+unzip $configjar > /dev/null
+
+if [ $? == "1" ]
+        then
+                echo "ERROR: Unable unzip $configjar"
+                exit 1
+        fi
+
+
+# look to see if the env arguement has been specified, if so, sort out the config.
+
+if [ $environment == "milan" ]
+	then
+		echo "JAVA_OPTS=\"\$JAVA_OPTS -DvoyagerProfile=milan\"" > /var/tomcat/servers/${instance}/conf/environment.conf
+
+	elif  [ $environment == "maui" ]
+	then
+
+		echo "JAVA_OPTS=\"\$JAVA_OPTS -DvoyagerProfile=maui\"" > /var/tomcat/servers/${instance}/conf/environment.conf
+	
+	elif  [ $environment == "lab" ]
+        then
+
+		echo "JAVA_OPTS=\"\$JAVA_OPTS -DvoyagerProfile=lab\"" > /var/tomcat/servers/${instance}/conf/environment.conf
+	fi
+
+
+# SCHAWEEEEETTTTTTT... we're got everything sorted... let's start this bad boy back up.
+
+echo " " 
+bash $init_script start
+echo " "
+
+# check service_version is valid based on type of environment
+
+if [ $type == "service"  ]
+	then
+	service_version=`curl http://localhost:${httpport}/ngat-service/admin/version 2>&1 | grep ".service<br/>Component Version" | cut -d"=" -f5 | cut -d "<" -f1`
+
+elif [ $type == "training" ]
+	then
+	service_version=`curl http://localhost:${httpport}/ngat-service/admin/version 2>&1 | grep ".service, Component Version" | cut -d"=" -f4 | cut -d "," -f1`
+fi
+
+# check version matches what is showing on status page
+
+if [ $service_version == "$version" ]
+
+then
+
+echo "Service version $service_version Deployed and running"
+echo " " 
+echo "                   __ooooooooooooooo__"
+echo "                 oOOOOOOOOOOOOOOOOOOOOOo"
+echo "             oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOo"
+echo "          oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOo"
+echo "        oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOo"
+echo "      oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOo"
+echo "     oOOOOOOOOOOO*  *OOOOOOOOOOOOOO*  *OOOOOOOOOOOOo"
+echo "    oOOOOOOOOOOO      OOOOOOOOOOOO      OOOOOOOOOOOOo"
+echo "    oOOOOOOOOOOOOo  oOOOOOOOOOOOOOOo  oOOOOOOOOOOOOOo"
+echo "   oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOo"
+echo "   oOOOO     OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO     OOOOo"
+echo "   oOOOOOO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO OOOOOOo"
+echo "    *OOOOO  OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO  OOOOO*"
+echo "    *OOOOOO  *OOOOOOOOOOOOOOOOOOOOOOOOOOOOO*  OOOOOO*"
+echo "     *OOOOOO  *OOOOOOOOOOOOOOOOOOOOOOOOOOO*  OOOOOO*"
+echo "      *OOOOOOo  *OOOOOOOOOOOOOOOOOOOOOOO*  oOOOOOO*"
+echo "        *OOOOOOOo  *OOOOOOOOOOOOOOOOO*  oOOOOOOO*"
+echo "          *OOOOOOOOo  *OOOOOOOOOOO*  oOOOOOOOO*"      
+echo "             *OOOOOOOOo           oOOOOOOOO*"      
+echo "                 *OOOOOOOOOOOOOOOOOOOOO*"                    
+echo "                      ooooooooooooo"
+
+else
+
+echo "ERROR: Deployment complete but I could not verify it was up and that the running version matched $version"
+
+fi
+
+
+}
+
+echo " " 
+echo "INFO: Deployment summary:"
+echo " " 
+echo "INFO: Version: $version"
+echo "INFO: Instance: $instance"
+echo "INFO: Type: $type"
+echo "INFO: catalina_base: $catalina_base"
+echo " "
+
+deploy_app
+

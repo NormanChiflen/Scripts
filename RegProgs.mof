@@ -1,0 +1,35 @@
+#pragma namespace("\\\\.\\root\\cimv2")
+instance of __Win32Provider as $Instprov
+{
+Name ="RegProv" ;
+ClsID = "{fe9af5c0-d3b6-11ce-a5b6-00aa00680c3f}" ;
+};
+instance of __InstanceProviderRegistration
+{
+Provider =$InstProv;
+SupportsPut =TRUE;
+SupportsGet =TRUE;
+SupportsDelete =FALSE;
+SupportsEnumeration = TRUE;
+};
+
+[dynamic, provider("RegProv"),
+ProviderClsid("{fe9af5c0-d3b6-11ce-a5b6-00aa00680c3f}"),
+ClassContext("local|HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")]
+class Win32_AddRemovePrograms
+{
+[key]
+string ProdID;
+[PropertyContext("DisplayName")]
+string DisplayName;
+[PropertyContext("Publisher")]
+string Publisher;
+[PropertyContext("DisplayVersion")]
+string Version;
+[PropertyContext("UninstallString")]
+string UninstallString;
+[PropertyContext("EstimatedSize")]
+string EstimatedSizeKb;
+[PropertyContext("InstallDate")]
+string InstallDate;
+};

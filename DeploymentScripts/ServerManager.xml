@@ -1,0 +1,307 @@
+﻿<ServerManagerConfigurationQuery>
+        <Role DisplayName="Active Directory Certificate Services (Core)" Installed="false" Id="AD-Certificate" CoreId="CertificateServices">
+                <RoleService DisplayName="Certification Authority" Installed="false" Id="ADCS-Cert-Authority" Default="true" />
+                <RoleService DisplayName="Certification Authority Web Enrollment" Installed="false" Id="ADCS-Web-Enrollment" SrvR2Id="WebEnrollmentServices" />
+                <RoleService DisplayName="Online Responder" Installed="false" Id="ADCS-Online-Cert" />
+                <RoleService DisplayName="Network Device Enrollment Service" Installed="false" Id="ADCS-Device-Enrollment" SrvR2Id="NetworkDeviceEnrollmentServices" />
+                <RoleService DisplayName="Certificate Enrollment Web Service (2008R2)" Installed="false" Id="ADCS-Enroll-Web-Svc" SrvR2Id="CertificateEnrollmentServer" />
+                <RoleService DisplayName="Certificate Enrollment Policy Web Service (2008R2)" Installed="false" Id="ADCS-Enroll-Web-Pol" SrvR2Id="CertificateEnrollmentPolicyServer" />
+        </Role>
+        <Role DisplayName="Active Directory Domain Services (Core)" Installed="false" Id="AD-Domain-Services" CoreId="DirectoryServices-DomainController-ServerFoundation">
+                <RoleService DisplayName="Active Directory Domain Controller (Core)" Installed="false" Id="ADDS-Domain-Controller" CoreId="Microsoft-Windows-DirectoryServices-DomainController-SrvFnd-Package" Default="true" />
+                <RoleService DisplayName="Identity Management for UNIX" Installed="false" Id="ADDS-Identity-Mgmt">
+                        <RoleService DisplayName="Server for Network Information Services" Installed="false" Id="ADDS-NIS"  SrvR2Id="NIS" Default="true" />
+                        <RoleService DisplayName="Password Synchronization" Installed="false" Id="ADDS-Password-Sync" Default="true" />
+                        <RoleService DisplayName="Administration Tools" Installed="false" Id="ADDS-IDMU-Tools" Default="true" />
+                </RoleService>
+        </Role>
+        <Role DisplayName="Active Directory Federation Services" Installed="false" Id="AD-Federation-Services">
+                <RoleService DisplayName="Federation Service" Installed="false" Id="ADFS-Federation" />
+                <RoleService DisplayName="Federation Service Proxy" Installed="false" Id="ADFS-Proxy" />
+                <RoleService DisplayName="AD FS Web Agents" Installed="false" Id="ADFS-Web-Agents">
+                        <RoleService DisplayName="Claims-aware Agent" Installed="false" Id="ADFS-Claims" SrvR2Id="ADFS-WebAgentClaims" />
+                        <RoleService DisplayName="Windows Token-based Agent" Installed="false" Id="ADFS-Windows-Token" SrvR2Id="ADFS-WebAgentToken" />
+                </RoleService>
+        </Role>
+        <Role DisplayName="Active Directory Lightweight Directory Services (Core)" Installed="false" Id="ADLDS" CoreId="DirectoryServices-ADAM-ServerCore" SrvR2Id="DirectoryServices-ADAM" />
+        <Role DisplayName="Active Directory Rights Management Services" Installed="false" Id="ADRMS">
+                <RoleService DisplayName="Active Directory Rights Management Server" Installed="false" Id="ADRMS-Server" SrvR2Id="RightsManagementServices" Default="true" />
+                <RoleService DisplayName="Identity Federation Support" Installed="false" Id="ADRMS-Identity" SrvR2Id="RMS-Federation" />
+        </Role>
+        <Role DisplayName="Application Server" Installed="false" Id="Application-Server" SrvR2Id="AppServer">
+                <RoleService DisplayName=".NET Framework 3.5.1 (2008R2)" Installed="false" Id="AS-NET-Framework" Default="true" />
+                <RoleService DisplayName="Application Server Foundation" Installed="false" Id="AS-AppServer-Foundation" Default="true" />
+                <RoleService DisplayName="Web Server (IIS) Support" Installed="false" Id="AS-Web-Support" />
+                <RoleService DisplayName="COM+ Network Access" Installed="false" Id="AS-Ent-Services" />
+                <RoleService DisplayName="TCP Port Sharing" Installed="false" Id="AS-TCP-Port-Sharing" />
+                <RoleService DisplayName="Windows Process Activation Service Support" Installed="false" Id="AS-WAS-Support">
+                        <RoleService DisplayName="HTTP Activation (Win7)" Installed="false" Id="AS-HTTP-Activation" Win7Id="MSMQ-HTTP" SrvR2Id="MSMQ-HTTP" />
+                        <RoleService DisplayName="Message Queuing Activation" Installed="false" Id="AS-MSMQ-Activation" />
+                        <RoleService DisplayName="TCP Activation" Installed="false" Id="AS-TCP-Activation" />
+                        <RoleService DisplayName="Named Pipes Activation" Installed="false" Id="AS-Named-Pipes" />
+                </RoleService>
+                <RoleService DisplayName="Distributed Transactions" Installed="false" Id="AS-Dist-Transaction">
+                        <RoleService DisplayName="Incoming Remote Transactions" Installed="false" Id="AS-Incoming-Trans" />
+                        <RoleService DisplayName="Outgoing Remote Transactions" Installed="false" Id="AS-Outgoing-Trans" />
+                        <RoleService DisplayName="WS-Atomic Transactions" Installed="false" Id="AS-WS-Atomic" />
+                </RoleService>
+        </Role>
+        <Role DisplayName="DHCP Server (Core)" Installed="false" Id="DHCP" CoreId="DHCPServerCore" SrvR2Id="DHCPServer" />
+        <Role DisplayName="DNS Server (Core)" Installed="false" Id="DNS" CoreId="DNS-Server-Core-Role" />
+        <Role DisplayName="Fax Server (Win7)" Installed="false" Id="Fax" Win7Id="FaxServicesClientPackage" SrvR2Id="FaxServiceRole" />
+        <Role DisplayName="File Services" Installed="true" Id="File-Services" >
+                <RoleService DisplayName="File Server (Core)" Installed="false" Id="FS-FileServer" CoreId="CoreFileServer" SrvR2Id="CoreFileServer" Default="true" />
+                <RoleService DisplayName="Distributed File System (Core)" Installed="false" Id="FS-DFS" CoreId="DFSN-Server">
+                        <RoleService DisplayName="DFS Namespaces" Installed="false" Id="FS-DFS-Namespace" />
+                        <RoleService DisplayName="DFS Replication (Core)" Installed="false" Id="FS-DFS-Replication" CoreId="DFSR-Infrastructure-ServerEdition" />
+                </RoleService>
+                <RoleService DisplayName="File Server Resource Manager" Installed="false" Id="FS-Resource-Manager" />
+                <RoleService DisplayName="Services for Network File System (Win7,Core)" Installed="false" Id="FS-NFS-Services" CoreId="ServerForNFS-Base" Win7Id="ServicesForNFS-ClientOnly" SrvR2Id="ServerForNFS-Infrastructure" />
+                <RoleService DisplayName="Windows Search Service (Win7)" Installed="false" Id="FS-Search-Service" Win7Id="SearchEngine-Client-Package" SrvR2Id="SearchEngine-Server-Package" />
+                <RoleService DisplayName="Windows Server 2003 File Services" Installed="false" Id="FS-Win2003-Services">
+                        <RoleService DisplayName="File Replication Service (2008)" Installed="false" Id="FS-Replication" CoreId="FRS-Infrastructure" />
+                        <RoleService DisplayName="Indexing Service (Win7)" Installed="false" Id="FS-Indexing-Service" Win7Id="Indexing-Service-Package" SrvR2Id="Indexing-Service-Package" />
+                </RoleService>
+                <RoleService DisplayName="BranchCache for network files (2008R2)" Installed="false" Id="FS-BranchCache" CoreId="SMBHashGeneration" SrvR2Id="SMBHashGeneration" />
+        </Role>
+        <Role DisplayName="Hyper-V (x64 only)" Installed="true" Id="Hyper-V" CoreId="Microsoft-Hyper-V" />
+        <Role DisplayName="Network Policy and Access Services" Installed="false" Id="NPAS">
+                <RoleService DisplayName="Network Policy Server" Installed="false" Id="NPAS-Policy-Server" />
+                <RoleService DisplayName="Routing and Remote Access Services" Installed="false" Id="NPAS-RRAS-Services" SrvR2Id="RasServerAll">
+                        <RoleService DisplayName="Remote Access Service" Installed="false" Id="NPAS-RRAS" SrvR2Id="RasServer" />
+                        <RoleService DisplayName="Routing" Installed="false" Id="NPAS-Routing" SrvR2Id="RasRoutingProtocols" />
+                </RoleService>
+                <RoleService DisplayName="Health Registration Authority" Installed="false" Id="NPAS-Health" />
+                <RoleService DisplayName="Host Credential Authorization Protocol" Installed="false" Id="NPAS-Host-Cred" SrvR2Id="HCAP-Server" />
+        </Role>
+        <Role DisplayName="Print and Document Services (Win7)" Installed="false" Id="Print-Services" Win7Id="Printing-Foundation-Features" SrvR2Id="Printing-Server-Role">
+                <RoleService DisplayName="Print Server (Core)" Installed="false" Id="Print-Server" CoreId="Printing-ServerCore-Role" Default="true" />
+                <RoleService DisplayName="LPD Service (Win7,Core)" Installed="false" Id="Print-LPD-Service" CoreId="Printing-LPDPrintService" Win7Id="Printing-Foundation-LPDPrintService" SrvR2Id="Printing-LPDPrintService" />
+                <RoleService DisplayName="Internet Printing" Installed="false" Id="Print-Internet" SrvR2Id="Printing-InternetPrinting-Server" />
+                <RoleService DisplayName="Distributed Scan Server (2008R2)" Installed="false" Id="Print-Scan-Server" SrvR2Id="BusScan-ScanServer" />
+        </Role>
+        <Role DisplayName="Terminal Services (2008)" Installed="false" Id="Terminal-Services">
+                <RoleService DisplayName="Terminal Server (2008)" Installed="false" Id="TS-Terminal-Server" />
+                <RoleService DisplayName="TS Licensing (2008)" Installed="false" Id="TS-Licensing" />
+                <RoleService DisplayName="TS Session Broker (2008)" Installed="false" Id="TS-Session-Broker" />
+                <RoleService DisplayName="TS Gateway (2008)" Installed="false" Id="TS-Gateway" />
+                <RoleService DisplayName="TS Web Access (2008)" Installed="false" Id="TS-Web-Access" />
+        </Role>
+        <Role DisplayName="Remote Desktop Services (2008R2)" Installed="false" Id="Remote-Desktop-Services">
+                <RoleService DisplayName="Remote Desktop Server (2008R2)" Installed="false" Id="RDS-RD-Server" />
+                <RoleService DisplayName="Remote Desktop Virtualization (2008R2)" Installed="false" Id="RDS-Virtualization" />
+                <RoleService DisplayName="Remote Desktop Licensing (2008R2)" Installed="false" Id="RDS-Licensing" SrvR2Id="Licensing" />
+                <RoleService DisplayName="Remote Desktop Connection Broker (2008R2)" Installed="false" Id="RDS-Connection-Broker" SrvR2Id="SessionDirectory" />
+                <RoleService DisplayName="Remote Desktop Gateway (2008R2)" Installed="false" Id="RDS-Gateway" SrvR2Id="Gateway" />
+                <RoleService DisplayName="Remote Desktop Web Access (2008R2)" Installed="false" Id="RDS-Web-Access" SrvR2Id="WebAccess" />
+        </Role>
+        <!-- BugBug missing install action! -->
+        <Role DisplayName="UDDI Services (2008)" Installed="false">
+                <RoleService DisplayName="UDDI Services Database (2008)" Installed="false" />
+                <RoleService DisplayName="UDDI Services Web Application (2008)" Installed="false" />
+        </Role>
+        <Role DisplayName="Web Server (IIS)" Installed="false" Id="Web-Server" CoreId="IIS-WebServerRole" Win7Id="IIS-WebServerRole" SrvR2Id="IIS-WebServerRole">
+                <RoleService DisplayName="Web Server (Win7,Core)" Installed="false" Id="Web-WebServer" CoreId="IIS-WebServer" Win7Id="IIS-WebServer" SrvR2Id="IIS-WebServer" Default="true">
+                        <RoleService DisplayName="Common HTTP Features (Win7,Core)" Installed="false" Id="Web-Common-Http" Win7Id="IIS-CommonHttpFeatures" SrvR2Id="IIS-CommonHttpFeatures" CoreId="IIS-CommonHttpFeatures" Default="true">
+                                <RoleService DisplayName="Static Content (Win7,Core)" Installed="false" Id="Web-Static-Content" Win7Id="IIS-StaticContent" SrvR2Id="IIS-StaticContent" CoreId="IIS-StaticContent" Default="true" />
+                                <RoleService DisplayName="Default Document (Win7,Core)" Installed="false" Id="Web-Default-Doc" Win7Id="IIS-DefaultDocument" SrvR2Id="IIS-DefaultDocument" CoreId="IIS-DefaultDocument" Default="true" />
+                                <RoleService DisplayName="Directory Browsing (Win7,Core)" Installed="false" Id="Web-Dir-Browsing" Win7Id="IIS-DirectoryBrowsing" SrvR2Id="IIS-DirectoryBrowsing" CoreId="IIS-DirectoryBrowsing" Default="true" />
+                                <RoleService DisplayName="HTTP Errors (Win7,Core)" Installed="false" Id="Web-Http-Errors" Win7Id="IIS-HttpErrors" SrvR2Id="IIS-HttpErrors" CoreId="IIS-HttpErrors" Default="true" />
+                                <RoleService DisplayName="HTTP Redirection (Win7,Core)" Installed="false" Id="Web-Http-Redirect" Win7Id="IIS-HttpRedirect" SrvR2Id="IIS-HttpRedirect" CoreId="IIS-HttpRedirect" />
+                                <RoleService DisplayName="WebDAV Publishing (2008R2)" Installed="false" Id="Web-DAV-Publishing" Win7Id="IIS-WebDAV" SrvR2Id="IIS-WebDAV" CoreId="IIS-WebDAV" />
+                        </RoleService>
+                        <RoleService DisplayName="Application Development (Win7,Core)" Installed="false" Id="Web-App-Dev" CoreId="IIS-ApplicationDevelopment" Win7Id="IIS-ApplicationDevelopment" SrvR2Id="IIS-ApplicationDevelopment" >
+                                <RoleService DisplayName="ASP.NET (Win7,Core)" Installed="false" Id="Web-Asp-Net" Win7Id="IIS-ASPNET" SrvR2Id="IIS-ASPNET" CoreId="IIS-ASPNET" />
+                                <RoleService DisplayName=".NET Extensibility (Win7,Core)" Installed="false" Id="Web-Net-Ext" Win7Id="IIS-NetFxExtensibility" SrvR2Id="IIS-NetFxExtensibility" CoreId="IIS-NetFxExtensibility" />
+                                <RoleService DisplayName="ASP (Win7,Core)" Installed="false" Id="Web-ASP" Win7Id="IIS-ASP" SrvR2Id="IIS-ASP" CoreId="IIS-ASP" />
+                                <RoleService DisplayName="CGI (Win7,Core)" Installed="false" Id="Web-CGI" Win7Id="IIS-CGI" SrvR2Id="IIS-CGI" CoreId="IIS-CGI" />
+                                <RoleService DisplayName="ISAPI Extensions (Win7,Core)" Installed="false" Id="Web-ISAPI-Ext" Win7Id="IIS-ISAPIExtensions" SrvR2Id="IIS-ISAPIExtensions" CoreId="IIS-ISAPIExtensions" />
+                                <RoleService DisplayName="ISAPI Filters (Win7,Core)" Installed="false" Id="Web-ISAPI-Filter" Win7Id="IIS-ISAPIFilter" SrvR2Id="IIS-ISAPIFilter" CoreId="IIS-ISAPIFilter" />
+                                <RoleService DisplayName="Server Side Includes (Win7,Core)" Installed="false" Id="Web-Includes" CoreId="IIS-ServerSideIncludes" Win7Id="IIS-ServerSideIncludes" SrvR2Id="IIS-ServerSideIncludes" />
+                        </RoleService>
+                        <RoleService DisplayName="Health and Diagnostics (Win7,Core)" Installed="false" Id="Web-Health" Win7Id="IIS-HealthAndDiagnostics" SrvR2Id="IIS-HealthAndDiagnostics" CoreId="IIS-HealthAndDiagnostics" Default="true">
+                                <RoleService DisplayName="HTTP Logging (Win7,Core)" Installed="false" Id="Web-Http-Logging" Win7Id="IIS-HttpLogging" SrvR2Id="IIS-HttpLogging" CoreId="IIS-HttpLogging" Default="true" />
+                                <RoleService DisplayName="Logging Tools (Win7,Core)" Installed="false" Id="Web-Log-Libraries" Win7Id="IIS-LoggingLibraries" SrvR2Id="IIS-LoggingLibraries" CoreId="IIS-LoggingLibraries" />
+                                <RoleService DisplayName="Request Monitor (Win7,Core)" Installed="false" Id="Web-Request-Monitor" Win7Id="IIS-RequestMonitor" SrvR2Id="IIS-RequestMonitor" CoreId="IIS-RequestMonitor" Default="true" />
+                                <RoleService DisplayName="Tracing (Win7,Core)" Installed="false" Id="Web-Http-Tracing" Win7Id="IIS-HttpTracing" SrvR2Id="IIS-HttpTracing" CoreId="IIS-HttpTracing" />
+                                <RoleService DisplayName="Custom Logging (Win7,Core)" Installed="false" Id="Web-Custom-Logging" Win7Id="IIS-CustomLogging" SrvR2Id="IIS-CustomLogging" CoreId="IIS-CustomLogging" />
+                                <RoleService DisplayName="ODBC Logging (Win7,Core)" Installed="false" Id="Web-ODBC-Logging" Win7Id="IIS-ODBCLogging" SrvR2Id="IIS-ODBCLogging" CoreId="IIS-ODBCLogging" />
+                        </RoleService>
+                        <RoleService DisplayName="Security (Win7,Core)" Installed="false" Id="Web-Security" Win7Id="IIS-Security" SrvR2Id="IIS-Security" CoreId="IIS-Security" Default="true">
+                                <RoleService DisplayName="Basic Authentication (Win7,Core)" Installed="false" Id="Web-Basic-Auth" Win7Id="IIS-BasicAuthentication" SrvR2Id="IIS-BasicAuthentication" CoreId="IIS-BasicAuthentication" />
+                                <RoleService DisplayName="Windows Authentication (Win7,Core)" Installed="false" Id="Web-Windows-Auth" Win7Id="IIS-WindowsAuthentication" SrvR2Id="IIS-WindowsAuthentication" CoreId="IIS-WindowsAuthentication" />
+                                <RoleService DisplayName="Digest Authentication (Win7,Core)" Installed="false" Id="Web-Digest-Auth" Win7Id="IIS-DigestAuthentication" SrvR2Id="IIS-DigestAuthentication" CoreId="IIS-DigestAuthentication" />
+                                <RoleService DisplayName="Client Certificate Mapping Authentication (Win7,Core)" Installed="false" Id="Web-Client-Auth" Win7Id="IIS-ClientCertificateMappingAuthentication" SrvR2Id="IIS-ClientCertificateMappingAuthentication" CoreId="IIS-ClientCertificateMappingAuthentication" />
+                                <RoleService DisplayName="IIS Client Certificate Mapping Authentication (Win7,Core)" Installed="false" Id="Web-Cert-Auth" Win7Id="IIS-IISCertificateMappingAuthentication" SrvR2Id="IIS-IISCertificateMappingAuthentication" CoreId="IIS-IISCertificateMappingAuthentication" />
+                                <RoleService DisplayName="URL Authorization (Win7,Core)" Installed="false" Id="Web-Url-Auth" Win7Id="IIS-URLAuthorization" SrvR2Id="IIS-URLAuthorization" CoreId="IIS-URLAuthorization" />
+                                <RoleService DisplayName="Request Filtering (Win7,Core)" Installed="false" Id="Web-Filtering" Win7Id="IIS-RequestFiltering" SrvR2Id="IIS-RequestFiltering" CoreId="IIS-RequestFiltering" Default="true" />
+                                <RoleService DisplayName="IP and Domain Restrictions (Win7,Core)" Installed="false" Id="Web-IP-Security" CoreId="IIS-IPSecurity" Win7Id="IIS-IPSecurity" SrvR2Id="IIS-IPSecurity" />
+                        </RoleService>
+                        <RoleService DisplayName="Performance (Win7,Core)" Installed="false" Id="Web-Performance" CoreId="IIS-Performance" Win7Id="IIS-Performance" SrvR2Id="IIS-Performance" Default="true">
+                                <RoleService DisplayName="Static Content Compression (Win7,Core)" Installed="false" Id="Web-Stat-Compression" Win7Id="IIS-HttpCompressionStatic" SrvR2Id="IIS-HttpCompressionStatic" CoreId="IIS-HttpCompressionStatic" Default="true" />
+                                <RoleService DisplayName="Dynamic Content Compression (Win7,Core)" Installed="false" Id="Web-Dyn-Compression" Win7Id="IIS-HttpCompressionDynamic" SrvR2Id="IIS-HttpCompressionDynamic" CoreId="IIS-HttpCompressionDynamic" />
+                        </RoleService>
+                </RoleService>
+                <RoleService DisplayName="Management Tools (Win7,Core)" Installed="false" Id="Web-Mgmt-Tools" CoreId="IIS-WebServerManagementTools" Win7Id="IIS-WebServerManagementTools" SrvR2Id="IIS-WebServerManagementTools" Default="true">
+                        <RoleService DisplayName="IIS Management Console (Win7)" Installed="false" Id="Web-Mgmt-Console" Win7Id="IIS-ManagementConsole" SrvR2Id="IIS-ManagementConsole" Default="true" />
+                        <RoleService DisplayName="IIS Management Scripts and Tools (Win7,Core)" Installed="false" Id="Web-Scripting-Tools" Win7Id="IIS-ManagementScriptingTools" SrvR2Id="IIS-ManagementScriptingTools" CoreId="IIS-ManagementScriptingTools" />
+                        <RoleService DisplayName="Management Service (Win7,Core)" Installed="false" Id="Web-Mgmt-Service" CoreId="IIS-ManagementService" Win7Id="IIS-ManagementService" SrvR2Id="IIS-ManagementService" />
+                        <RoleService DisplayName="IIS 6 Management Compatibility (Win7,Core)" Installed="false" Id="Web-Mgmt-Compat" Win7Id="IIS-IIS6ManagementCompatibility" SrvR2Id="IIS-IIS6ManagementCompatibility" CoreId="IIS-IIS6ManagementCompatibility">
+                                <RoleService DisplayName="IIS 6 Metabase Compatibility (Win7,Core)" Installed="false" Id="Web-Metabase" CoreId="IIS-Metabase" Win7Id="IIS-Metabase" SrvR2Id="IIS-Metabase" />
+                                <RoleService DisplayName="IIS 6 WMI Compatibility (Win7,Core)" Installed="false" Id="Web-WMI" Win7Id="IIS-WMICompatibility" SrvR2Id="IIS-WMICompatibility" CoreId="IIS-WMICompatibility" />
+                                <RoleService DisplayName="IIS 6 Scripting Tools (Win7,Core)" Installed="false" Id="Web-Lgcy-Scripting" Win7Id="IIS-LegacyScripts" SrvR2Id="IIS-LegacyScripts" CoreId="IIS-LegacyScripts" />
+                                <RoleService DisplayName="IIS 6 Management Console (Win7)" Installed="false" Id="Web-Lgcy-Mgmt-Console" Win7Id="IIS-LegacySnapIn" SrvR2Id="IIS-LegacySnapIn" />
+                        </RoleService>
+                </RoleService>
+                <RoleService DisplayName="FTP Publishing Service (2008)" Installed="false" Id="Web-Ftp-Publishing" CoreId="IIS-FTPPublishingService">
+                        <RoleService DisplayName="FTP Server (2008)" Installed="false" Id="Web-Ftp-Server" CoreId="IIS-FTPServer" />
+                        <RoleService DisplayName="FTP Management Console (2008)" Installed="false" Id="Web-Ftp-Mgmt-Console" />
+                </RoleService>
+                <RoleService DisplayName="FTP Server (2008R2)" Installed="false" Id="Web-Ftp-Server" Win7Id="IIS-FTPServer" SrvR2Id="IIS-FTPServer" CoreId="IIS-FTPServer">
+                        <RoleService DisplayName="FTP Service (2008R2)" Installed="false" Id="Web-Ftp-Service" Win7Id="IIS-FTPSvc" SrvR2Id="IIS-FTPSvc" CoreId="IIS-FTPSvc" />
+                        <RoleService DisplayName="FTP Extensibility (2008R2)" Installed="false" Id="Web-Ftp-Ext" Win7Id="IIS-FTPExtensibility" SrvR2Id="IIS-FTPExtensibility" CoreId="IIS-FTPExtensibility" />
+                </RoleService>
+                <RoleService DisplayName="IIS Hostable Web Core (2008R2)" Installed="false" Id="Web-WHC" CoreId="IIS-HostableWebCore" Win7Id="IIS-HostableWebCore" SrvR2Id="IIS-HostableWebCore" />
+        </Role>
+        <Role DisplayName="Windows Deployment Services" Installed="false" Id="WDS" SrvR2Id="Microsoft-Windows-Deployment-Services" >
+                <RoleService DisplayName="Deployment Server" Installed="false" Id="WDS-Deployment" Default="true" SrvR2Id="Microsoft-Windows-Deployment-Services-Deployment-Server" />
+                <RoleService DisplayName="Transport Server" Installed="false" Id="WDS-Transport" Default="true" SrvR2Id="Microsoft-Windows-Deployment-Services-Transport-Server" />
+        </Role>
+        <Role DisplayName="Windows Server Update Services (2008R2)" Installed="false" Id="OOB-WSUS" />
+        <!-- Features -->
+        <Feature DisplayName=".NET Framework 3.x Features" Installed="false" Id="NET-Framework">
+                <Feature DisplayName=".NET Framework 2.x (2008R2 Core)" Installed="false" CoreId="NetFx2-ServerCore" Default="true" />
+                <Feature DisplayName=".NET Framework 3.x (Win7,Core)" Installed="false" Id="NET-Framework-Core" CoreId="NetFx3-ServerCore"  Win7Id="NetFx3" SrvR2Id="NetFx3" Default="true" />
+                <Feature DisplayName="XPS Viewer (2008)" Installed="false" Id="NET-XPS-Viewer" Default="true" />
+                <Feature DisplayName="WCF Activation" Installed="false" Id="NET-Win-CFAC" Default="true">
+                        <Feature DisplayName="HTTP Activation (Win7)" Installed="false" Id="NET-HTTP-Activation" CoreId="WCF-HTTP-Activation" Win7Id="WCF-HTTP-Activation" SrvR2Id="WCF-HTTP-Activation" Default="true" />
+                        <Feature DisplayName="Non-HTTP Activation (Win7,Core)" Installed="false" Id="NET-Non-HTTP-Activ" CoreId="WCF-NonHTTP-Activation" Win7Id="WCF-NonHTTP-Activation" SrvR2Id="WCF-NonHTTP-Activation" Default="true" />
+                </Feature>
+        </Feature>
+        <Feature DisplayName="Background Intelligent Transfer Service (BITS)" Installed="false" Id="BITS" >
+                <Feature DisplayName="Compact Server (2008R2)" Installed="false" Id="BITS-Compact-Server" CoreId="LightweightServer" SrvR2Id="LightweightServer" />
+                <Feature DisplayName="IIS Server Extension (2008R2)" Installed="false" Id="BITS-IIS-Ext" />
+        </Feature>
+        <Feature DisplayName="BitLocker Drive Encryption (Core)" Installed="false" Id="BitLocker" CoreId="BitLocker" SrvR2Id="BitLocker" />
+        <Feature DisplayName="BranchCache (2008R2)" Installed="false" Id="BranchCache" SrvR2Id="PeerDist" />
+        <Feature DisplayName="Connection Manager Administration Kit" Installed="false" Id="CMAK" SrvR2Id="RasCMAK" />
+        <Feature DisplayName="Desktop Experience" Installed="false" Id="Desktop-Experience" />
+        <Feature DisplayName="DirectAccess Management Console (2008R2)" Installed="false" Id="DAMC" />
+        <Feature DisplayName="Failover Clustering (Core)" Installed="false" Id="Failover-Clustering" CoreId="FailoverCluster-Core" SrvR2Id="FailoverCluster-FullServer" />
+        <Feature DisplayName="Group Policy Management" Installed="false" Id="GPMC" SrvR2Id="Microsoft-Windows-GroupPolicy-ServerAdminTools-Update" />
+        <Feature DisplayName="Ink and Handwriting Services (2008R2)" Installed="false" Id="Ink-Handwriting">
+                <Feature DisplayName="Ink Support (2008R2)" Installed="false" Id="IH-Ink-Support" />
+                <Feature DisplayName="Handwriting Recognition (2008R2)" Installed="false" Id="IH-Handwriting" />
+        </Feature>
+        <Feature DisplayName="Internet Printing Client (Win7)" Installed="false" Id="Internet-Print-Client" Win7Id="Printing-Foundation-InternetPrinting-Client" SrvR2Id="Printing-InternetPrinting-Client" />
+        <Feature DisplayName="Internet Storage Name Server" Installed="false" Id="ISNS" SrvR2Id="iSNS_Service" />
+        <Feature DisplayName="LPR Port Monitor (Win7)" Installed="false" Id="LPR-Port-Monitor" Win7Id="Printing-Foundation-LPRPortMonitor" SrvR2Id="Printing-LPRPortMonitor" />
+        <Feature DisplayName="Message Queuing" Installed="false" Id="MSMQ">
+                <Feature DisplayName="Message Queuing Services" Installed="false" Id="MSMQ-Services" Default="true">
+                        <Feature DisplayName="Message Queuing Server (Win7)" Installed="false" Id="MSMQ-Server" Default="true" Win7Id="MSMQ-Server" SrvR2Id="MSMQ-Server" />
+                        <Feature DisplayName="Directory Service Integration" Installed="false" Id="MSMQ-Directory" />
+                        <Feature DisplayName="Message Queuing Triggers (Win7)" Installed="false" Id="MSMQ-Triggers" Win7Id="MSMQ-Triggers" SrvR2Id="MSMQ-Triggers" />
+                        <Feature DisplayName="HTTP Support" Installed="false" Id="MSMQ-HTTP-Support" />
+                        <Feature DisplayName="Multicasting Support (Win7)" Installed="false" Id="MSMQ-Multicasting" Win7Id="MSMQ-Multicast" SrvR2Id="MSMQ-Multicast" />
+                        <Feature DisplayName="Routing Service" Installed="false" Id="MSMQ-Routing" SrvR2Id="MSMQ-RoutingServer" />
+                </Feature>
+                <Feature DisplayName="Windows 2000 Client Support (2008)" Installed="false" Id="MSMQ-Win2000" />
+                <Feature DisplayName="Message Queuing DCOM Proxy (Win7)" Installed="false" Id="MSMQ-DCOM" Win7Id="MSMQ-DCOMProxy" SrvR2Id="MSMQ-DCOMProxy" />
+        </Feature>
+        <Feature DisplayName="Multipath I/O (Core)" Installed="false" Id="Multipath-IO" CoreId="MultipathIo" />
+        <Feature DisplayName="Network Load Balancing (Core)" Installed="false" Id="NLB" CoreId="NetworkLoadBalancingHeadlessServer" />
+        <Feature DisplayName="Peer Name Resolution Protocol (Core)" Installed="false" Id="PNRP" CoreId="PeerDist" SrvR2Id="P2P-PnrpOnly" />
+        <Feature DisplayName="Quality Windows Audio Video Experience (Core)" Installed="false" Id="qWave" CoreId="QWAVE" />
+        <Feature DisplayName="Remote Assistance" Installed="false" Id="Remote-Assistance" />
+        <Feature DisplayName="Remote Differential Compression (Win7)" Installed="false" Id="RDC" Win7Id="MSRDC-Infrastructure" SrvR2Id="MSRDC-Infrastructure" />
+        <Feature DisplayName="Remote Server Administration Tools" Installed="false" Id="RSAT"  SrvR2Id="AdminUI">
+                <Feature DisplayName="Role Administration Tools" Installed="false" Id="RSAT-Role-Tools">
+                        <Feature DisplayName="Active Directory Certificate Services Tools" Installed="false" Id="RSAT-ADCS" SrvR2Id="CertificateServicesManagementTools">
+                                <Feature DisplayName="Certification Authority Tools" Installed="false" Id="RSAT-ADCS-Mgmt" />
+                                <Feature DisplayName="Online Responder Tools" Installed="false" Id="RSAT-Online-Responder" />
+                        </Feature>
+                        <Feature DisplayName="Active Directory Lightweight Directory Services Tools (2008)" Installed="false" Id="RSAT-ADLDS" />
+                        <Feature DisplayName="AD DS and AD LDS Tools (2008R2)" Installed="false" Id="RSAT-AD-Tools">
+                                <Feature DisplayName="Active Directory Domain Services Tools" Installed="false" Id="RSAT-ADDS">
+                                        <Feature DisplayName="AD DS Snap-Ins and Command-Line Tools (2008R2)" Installed="false" Id="RSAT-ADDS-Tools" />
+                                        <Feature DisplayName="Active Directory Administrative Center (2008R2)" Installed="false" Id="RSAT-AD-AdminCenter" />
+                                        <Feature DisplayName="Active Directory Domain Controller Tools (2008)" Installed="false" Id="RSAT-ADDC" />
+                                        <Feature DisplayName="Server for NIS Tools" Installed="false" Id="RSAT-SNIS" SrvR2Id="RSAT-NIS" />
+                                </Feature>
+                                <Feature DisplayName="AD LDS Snap-Ins and Command-Line Tools (2008R2)" Installed="false" Id="RSAT-ADLDS" />
+                                <Feature DisplayName="Active Directory PowerShell Snap-in (2008R2)" Installed="false" Id="RSAT-AD-PowerShell" CoreId="ActiveDirectory-PowerShell" />
+                        </Feature>
+                        <Feature DisplayName="Active Directory Rights Management Services Tools" Installed="false" Id="RSAT-RMS" SrvR2Id="RightsManagementServices-AdminTools" />
+                        <Feature DisplayName="DHCP Server Tools" Installed="false" Id="RSAT-DHCP" SrvR2Id="DHCPServer-RSATClient-Tools" />
+                        <Feature DisplayName="DNS Server Tools" Installed="false" Id="RSAT-DNS-Server" />
+                        <Feature DisplayName="Fax Server Tools (Win7)" Installed="false" Id="RSAT-Fax" Win7Id="ScanManagementConsole" SrvR2Id="FaxServiceConfigRole" />
+                        <Feature DisplayName="File Services Tools" Installed="false" Id="RSAT-File-Services" SrvR2Id="FSRM-Management">
+                                <Feature DisplayName="Distributed File System Tools" Installed="false" Id="RSAT-DFS-Mgmt-Con" SrvR2Id="DfsMgmt" />
+                                <Feature DisplayName="File Server Resource Manager Tools (Core)" Installed="false" Id="RSAT-FSRM-Mgmt" CoreId="FSRM-Infrastructure-Core" SrvR2Id="FSRM-Infrastructure" />
+                                <Feature DisplayName="Services for Network File System Tools (Win7)" Installed="false" Id="RSAT-NFS-Admin" Win7Id="NFS-Administration" SrvR2Id="NFS-Administration" />
+                        </Feature>
+                        <Feature DisplayName="Hyper-V Tools (Core)" Installed="false" Id="RSAT-Hyper-V" CoreId="VmHostAgent" />
+                        <Feature DisplayName="Network Policy and Access Services Tools" Installed="false" Id="RSAT-NPAS" SrvR2Id="NPSManagementTools" />
+                        <Feature DisplayName="Print and Document Services Tools" Installed="false" Id="RSAT-Print-Services" SrvR2Id="Printing-AdminTools-Collection" />
+                        <Feature DisplayName="Terminal Services Tools (2008)" Installed="false" Id="RSAT-TS">
+                                <Feature DisplayName="Terminal Server Tools (2008)" Installed="false" Id="RSAT-TS-RemoteApp" />
+                                <Feature DisplayName="TS Gateway Tools (2008)" Installed="false" Id="RSAT-TS-Gateway" />
+                                <Feature DisplayName="TS Licensing Tools (2008)" Installed="false" Id="RSAT-TS-Licensing" />
+                        </Feature>
+                        <Feature DisplayName="Remote Desktop Services Tools (2008R2)" Installed="false" Id="RSAT-RDS">
+                                <Feature DisplayName="Remote Desktop Server Tools (2008R2)" Installed="false" Id="RSAT-RDS-RemoteApp" />
+                                <Feature DisplayName="Remote Desktop Gateway Tools (2008R2)" Installed="false" Id="RSAT-RDS-Gateway" SrvR2Id="Gateway-UI" />
+                                <Feature DisplayName="Remote Desktop Licensing Tools (2008R2)" Installed="false" Id="RSAT-RDS-Licensing" SrvR2Id="Licensing-UI" />
+                                <Feature DisplayName="Remote Desktop Connection Broker Tools (2008R2)" Installed="false" Id="RSAT-RDS-Conn-Broker"  SrvR2Id="SBMgr-UI" />
+                        </Feature>
+                        <Feature DisplayName="UDDI Services Tools (2008)" Installed="false" Id="RSAT-UDDI" />
+                        <Feature DisplayName="Web Server (IIS) Tools" Installed="false" Id="RSAT-Web-Server" />
+                        <Feature DisplayName="Windows Deployment Services Tools" Installed="false" Id="RSAT-WDS" SrvR2Id="Microsoft-Windows-Deployment-Services-Admin-Pack" />
+                </Feature>
+                <Feature DisplayName="Feature Administration Tools" Installed="false" Id="RSAT-Feature-Tools">
+                        <Feature DisplayName="BitLocker Drive Encryption Tools (Core)" Installed="false" Id="RSAT-BitLocker" CoreId="BitLocker-RemoteAdminTool" />
+                        <Feature DisplayName="BitLocker Drive Encryption Administration Utilities" Installed="false" Id="RSAT-BitLocker">
+                                <Feature DisplayName="BitLocker Drive Encryption Tools (2008R2)" Installed="false" Id="RSAT-Bitlocker-DriveEnc" />
+                                <Feature DisplayName="BitLocker Recovery Password Viewer (2008R2)" Installed="false" Id="RSAT-Bitlocker-RecPwd" />
+                        </Feature>
+                        <Feature DisplayName="BITS Server Extensions Tools" Installed="false" Id="RSAT-Bits-Server" SrvR2Id="BITSExtensions-AdminPack" />
+                        <Feature DisplayName="Failover Clustering Tools" Installed="false" Id="RSAT-Clustering" SrvR2Id="FailoverCluster-AdminPak" />
+                        <Feature DisplayName="Network Load Balancing Tools" Installed="false" Id="RSAT-NLB" SrvR2Id="NetworkLoadBalancingManagementClient" />
+                        <Feature DisplayName="SMTP Server Tools" Installed="false" Id="RSAT-SMTP" SrvR2Id="Smtpsvc-Admin-Update-Name" />
+                        <Feature DisplayName="WINS Server Tools" Installed="false" Id="RSAT-WINS" SrvR2Id="Microsoft-Windows-Internet-Naming-Service-AdminTools" />
+                </Feature>
+        </Feature>
+        <Feature DisplayName="Removable Storage Manager (2008)" Installed="false" Id="Removable-Storage" CoreId="Microsoft-Windows-RemovableStorageManagementCore" />
+        <Feature DisplayName="RPC over HTTP Proxy" Installed="false" Id="RPC-over-HTTP-Proxy" />
+        <Feature DisplayName="Simple TCP/IP Services (Win7)" Installed="false" Id="Simple-TCPIP" Win7Id="SimpleTCP" SrvR2Id="SimpleTCP" />
+        <Feature DisplayName="SMTP Server" Installed="false" Id="SMTP-Server" SrvR2Id="Smtpsvc-Service-Update-Name" />
+        <Feature DisplayName="SNMP Services (Win7,Core)" Installed="false" Id="SNMP-Services" CoreId="SNMP-SC" Win7Id="SNMP" SrvR2Id="SNMP">
+                <Feature DisplayName="SNMP Service" Installed="false" Id="SNMP-Service" Default="true" />
+                <Feature DisplayName="SNMP WMI Provider (Win7)" Installed="false" Id="SNMP-WMI-Provider" Win7Id="WMISnmpProvider" SrvR2Id="WMISnmpProvider" Default="true" />
+        </Feature>
+        <Feature DisplayName="Storage Manager for SANs" Installed="false" Id="Storage-Mgr-SANS" SrvR2Id="StorageManagerForSANs" />
+        <Feature DisplayName="Subsystem for UNIX-based Applications (Win7,Core)" Installed="false" Id="Subsystem-UNIX-Apps" Win7Id="SUA" SrvR2Id="SUA" CoreId="SUACore" />
+        <Feature DisplayName="Telnet Client (Win7,Core)" Installed="false" Id="Telnet-Client" Win7Id="TelnetClient" SrvR2Id="TelnetClient" CoreId="TelnetClient" />
+        <Feature DisplayName="Telnet Server (Win7)" Installed="false" Id="Telnet-Server" Win7Id="TelnetServer" SrvR2Id="TelnetServer" />
+        <Feature DisplayName="TFTP Client (Win7)" Installed="false" Id="TFTP-Client" Win7Id="TFTP" SrvR2Id="TFTP" />
+        <Feature DisplayName="Windows Biometric Framework (2008R2)" Installed="false" Id="Biometric-Framework" />
+        <Feature DisplayName="Windows Internal Database" Installed="false" Id="Windows-Internal-DB" />
+        <Feature DisplayName="Windows PowerShell (2008)" Installed="false" Id="PowerShell" CoreId="MicrosoftWindowsPowerShell" />
+        <Feature DisplayName="Windows PowerShell Integrated Scripting Environment (ISE)" Installed="false" Id="PowerShell-ISE" SrvR2Id="MicrosoftWindowsPowerShellISE" />
+        <Feature DisplayName="Windows Process Activation Service (Win7,Core)" Installed="false" Id="WAS" Win7Id="WAS-WindowsActivationService" SrvR2Id="WAS-WindowsActivationService" CoreId="WAS-WindowsActivationService">
+                <Feature DisplayName="Process Model (Win7,Core)" Installed="false" Id="WAS-Process-Model" Win7Id="WAS-ProcessModel" SrvR2Id="WAS-ProcessModel" CoreId="WAS-ProcessModel" Default="true" />
+                <Feature DisplayName=".NET Environment (Win7,Core)" Installed="false" Id="WAS-NET-Environment" Win7Id="WAS-NetFxEnvironment" SrvR2Id="WAS-NetFxEnvironment" CoreId="WAS-NetFxEnvironment" />
+                <Feature DisplayName="Configuration APIs (Win7,Core)" Installed="false" Id="WAS-Config-APIs" Win7Id="WAS-ConfigurationAPI" SrvR2Id="WAS-ConfigurationAPI" CoreId="WAS-ConfigurationAPI" />
+        </Feature>
+        <Feature DisplayName="Windows Server Backup Features" Installed="false" Id="Backup-Features">
+                <Feature DisplayName="Windows Server Backup (Core)" Installed="false" Id="Backup" CoreId="WindowsServerBackup" SrvR2Id="WindowsServerBackup" Default="true" />
+                <Feature DisplayName="Command-line Tools (Core)" Installed="false" Id="Backup-Tools" CoreId="WindowsServerBackupCommandlet" />
+        </Feature>
+        <Feature DisplayName="Windows Server Migration Tools (2008R2)" Installed="false" Id="Migration" CoreId="ServerMigration" />
+        <Feature DisplayName="Windows System Resource Manager" Installed="false" Id="WSRM" />
+        <Feature DisplayName="Windows TIFF IFilter (2008R2,Win7)" Installed="false" Id="TIFF-IFilter" Win7Id="TIFFIFilter" SrvR2Id="TIFFIFilter" />
+        <Feature DisplayName="WinRM IIS Extension (2008R2)" Installed="false" Id="WinRM-IIS-Ext" SrvR2Id="Microsoft-Windows-Web-Services-for-Management-IIS-Extension" />
+        <Feature DisplayName="WINS Server (Core)" Installed="false" Id="WINS-Server" CoreId="WINS-SC" SrvR2Id="WINSRuntime" />
+        <Feature DisplayName="Wireless LAN Service" Installed="false" Id="Wireless-Networking" SrvR2Id="WirelessNetworking" />
+        <Feature DisplayName="XPS Viewer (2008R2,Win7)" Installed="false" Id="XPS-Viewer" Win7Id="Xps-Foundation-Xps-Viewer" SrvR2Id="Xps-Foundation-Xps-Viewer" />
+</ServerManagerConfigurationQuery>

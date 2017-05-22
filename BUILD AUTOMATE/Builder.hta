@@ -1,0 +1,279 @@
+<!--------------------------------------------------------------------------------
+-- Project        : MCSP
+--
+-- Copyright 2008 Lockheed Martin Corporation
+--
+-- Name           : Builder.hta
+--
+-- Classification : UKR
+--
+-- Description    :
+-- TODO: Add Class/Package Description
+--
+-- Author         : Ray Scheuerman
+--
+-------------------------------------------------------------------------------->
+
+<html>
+   <head>
+      <HTA:Application
+         ApplicationName = "Builder"
+         Scroll="yes"
+         SingleInstance="yes"
+         WindowState="Normal"
+         SysMenu="Yes"
+         Caption="Yes"
+         Border="thin"
+         MaximizeButton="yes"
+         MinimizeButton="yes"
+         ShowInTaskbar="yes"
+         ScrollFlat="no"
+      >
+      <style type="text/css">
+         body {background-color: rgb(176,176,176)}
+      </style>
+   </head>
+   <script language "JScript">
+      shell = new ActiveXObject("Wscript.shell");
+      fso = new ActiveXObject("Scripting.FileSystemObject");
+      dev_Version_Label = "dev01.00.00";
+      int_floating_Version_Label = "int01.00.00";
+//      int_static_Version_Label = dev_Version_Label;
+      int_static_Version_Label = "int01.00.00.01";
+      pmt_Version_Label = "pmt01.00.00.01";
+
+      function Verify()
+      {
+         if (ValidUser())
+         {
+            Output("Getting VM promote list file ...");
+            shell.run("cmd /C pcli run -q get -prS:\\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -v" + pmt_Version_Label + " /Scripts/Promote.lst", 0, true);
+            Output(" Finished<br \>");
+            Output("Creating promote list file ...");
+            if (fso.FileExists("Promote.out"))
+            {
+               shell.run("cmd /C del /F Promote.out");
+            }
+            shell.run("cmd /C pcli run -q vlog -fPromote.out -prS:\\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -bv" + int_static_Version_Label + " -z /", 0, true);
+            Output(" Finished<br \>");
+            if (DiffPromote())
+            {
+               shell.run("cmd /C del /F Promote.out T:\\Code\\Scripts\\Promote.lst");
+               Output("Checking for newer file versions ...");
+               shell.run("cmd /C pcli run -q vlog -fPromote.out -prS:\\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -bc" + int_static_Version_Label + " -z /", 0, true);
+               Output(" Finished<br \>");
+               var outFile = fso.GetFile("Promote.out");
+               if (outFile.size > 0)
+               {
+                  var inFile = fso.OpenTextFile("Promote.out", 1, true);
+                  while (!inFile.AtEndOfStream)
+                  {
+                     diffLine = inFile.ReadLine();
+                     Output("<font color=yellow>" + diffLine + "</font><br \>");
+                  }
+                  inFile.close();
+               }
+               else
+               {
+                  Output("<font color=green>No newer content in VM</font><br \>");
+               }
+               shell.run("cmd /C del /F Promote.out");
+            }
+         }
+      }
+
+      function ShowDiff()
+      {
+         if (fso.FileExists("Promote.out") && fso.FileExists("T:\\Code\\Scripts\\Promote.lst"))
+         {
+            shell.run("cmd /C uc -t Promote.out T:\\Code\\Scripts\\Promote.lst", 0, false);
+         }
+         else
+         {
+            Output("Promote list files not found<br \>");
+         }
+            
+      }
+      
+      function Build()
+      {
+         if (ValidUser())
+         {
+            Output(" Getting files ...");
+            shell.run("cmd /C pcli run -q get -prS:\Code -id" + txtRLIUsername.value + ":" + txtPassword.value + " -aT:\\" + int_static_Version_Label + " -bp/ -v" + int_static_Version_Label + " -z /", 0, true);
+            Output(" Finished<br \>Building<br \> Vendor Build ...<br \>");
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Vendor_Build\\IData\\lib && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.lib.gpj", 0, true);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Vendor_Build\\IData\\DGL_Server && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.gpj", 0, true);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Vendor_Build\\ivfsserver_module && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.gpj", 0, true);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Vendor_Build\\kernel && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.gpj", 0, true);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Vendor_Build\\Polyhedra && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.gpj", 0, true);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Vendor_Build\\Posix_System_Server && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.gpj", 0, true);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Vendor_Build\\Shared_Lib && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.lib.gpj", 0, true);
+            Output("  Common ...<br \>");
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\Common && C:\\GHS\\PPC423\\gbuild -noprogress -parallel=4 -lockout -top default.ppc.lib.gpj", 0, true);
+            Output(" Components Common ...<br \>");
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\TWP_Common && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.lib.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\IMP_Common && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.lib.gpj", 0, true);
+            Output(" Components ...<br \>");
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Acoustics_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Acoustics_Track && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_ASW_Attack_Tracker && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Acoustics_Track && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Data_Fusion_Track && C:\\GHS\\PPC423\\gbuild -noprogress  -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Data_Recovery && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_DF_Tracker_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_DLP_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_DMS_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_EMS_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_HMI_Controller && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_IM_Host_Controller && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_MDSU_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_MDSU_Logger && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Own_Vehicle_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_PTD_Controller && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Radar_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_SMS_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_TacNav_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Tactical_Database && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Tactical_Database_Replica && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Tactical_Item_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Tactical_Manager && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Tote_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_TSD_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_TSU_Controller && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_TW_Host_Controller && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_TW_Training && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Window_Layout_HMI && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\C_Renderer && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, true);
+            Output(" Integrating IMP & TWP ...<br \>");
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\IMP && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, false);
+            shell.run("cmd /c cd T:\\" + int_static_Version_Label + "\\Integrity_Build\\TWP && C:\\GHS\\PPC423\\gbuild -noprogress -lockout -top default.ppc.gpj", 0, true);
+            Output("Finished<br \>");
+         }
+      }
+
+      function DiffPromote()
+      {
+         var valid = true;
+         if (fso.FileExists("Promote.out") && fso.FileExists("T:\\Code\\Scripts\\Promote.lst"))
+         {
+            shell.run("cmd /C uc -qc Promote.out T:\\Code\\Scripts\\Promote.lst > Temp.txt", 0, true);
+            var inFile = fso.OpenTextFile("Temp.txt", 1 /* For Reading */, false);
+            diffLine = inFile.ReadLine();
+            if (diffLine.substring(0,4) == "Same")
+            {
+               Output("<font color=green>Content in VM is the same as the contents in Promote List</font><br \>");
+            }
+            else
+            {
+               Output("<font color=red>Content in VM is different than the contents in Promote List</font><br \>");
+               valid = false;
+            }
+            inFile.Close();
+            shell.run("cmd /C del /F Temp.txt");
+         }
+         else
+         {
+            Output("Promote list files not found<br \>");
+            valid = false;
+         }
+         return valid;
+            
+      }
+      
+      function Next()
+      {
+      }
+      
+      function ValidUser()
+      {
+         var valid = true;
+         if (txtRLIUsername.value != "" && txtPassword.value != "")
+         {
+            shell.run("cmd /C get -xePromote.err -id" + txtRLIUsername.value + ":" + txtPassword.value + " -v" + pmt_Version_Label + " S:\\Code\\archives\\Scripts\\Promote.lst-arc", 0, true);
+            var errFile = fso.GetFile("Promote.err");
+            if (errFile.size > 0)
+            {
+               Output("Supplied RLI Username and password invalid<br \>");
+               valid = false;
+            }
+            shell.run("cmd /C del /F Promote.err Promote.lst");
+         }
+         else
+         {
+            Output("Must supply RLI Username and password<br \>");
+            valid = false;
+         }
+         return valid;
+      }
+
+      function Output(str)
+      {
+         spnOutput.innerHTML += str;
+      }
+      
+   </script>
+
+   <body onload="spnVersion.innerHTML = int_floating_Version_Label">
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="90%" valign="Middle">
+      <h1>
+         Tactical Mission Computer Software Builder <span id ="spnVersion"> </span>
+      </h1>
+      </td>
+      <td width="10%" valign="top">
+         <img src="logo.png" />
+      </td>
+      </tr>
+      </table>
+      <hr />
+      <h2>RLI</h2>
+      <p>Input the your RLI account information to use VM</p>
+      <label>Username:</label>
+      <input name="txtRLIUsername" type="text" size=40></input>
+      <br />
+      <label>Password:</label>
+      <input name="txtPassword" type="password" size=40></input>
+      <br /><br /><hr />
+      <h2>Verify & Build</h2>
+      <table border="0" width="100%" cellpadding="10">
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="    Verify   " name="btnVerify" onClick="Verify()">
+      </td>
+      <td width="94%" valign="middle">
+      Verify contents in VM are latest and correct version
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="Show Diff" name="btnDiff" onClick="ShowDiff()">
+      </td>
+      <td width="94%" valign="middle">
+      Show Differences of failed verify
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="    Build    " name="btnBuild" onClick="Build()">
+      </td>
+      <td width="94%" valign="middle">
+      Build IMP & TWP Integrity modules
+      </td>
+      </tr>
+      <tr>
+      <td width="6%" valign="top">
+      <input type="button" value="     Next    " name="btnNext" onClick="Next()">
+      </td>
+      <td width="94%" valign="middle">
+      Tag the current files for the next version
+      </td>
+      </tr>
+      </table>
+      <br /><br /><hr />
+      <h2>Output:</h2>
+      <span id="spnOutput">
+      </span>
+   </body>
+</html>

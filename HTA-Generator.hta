@@ -1,0 +1,623 @@
+<!-->  
+<! NAME: HTA Template Generator_v3.hta  
+<!  
+<! AUTHOR: DarrenSk  
+<! DATE  : 5/4/2012  
+<!  
+<! COMMENT: This .HTA will generate a basic .hta template with the common 
+<! Attributes/Properties of an .hta like adding a scroll bar, system menu, 
+<! window state, and selecting border styles etc.  I have also added the option 
+<! to select all, or select individual options.  By default, the scripts are 
+<! saved to C:\Scripts, and in it's own folder.  You can specify to save into 
+<! a different location, such as a different drive or directory, as well as  
+<! not to save it in it's own folder.  If you change the save to location 
+<! and the location does not exist, this script will create the location and  
+<! save the script to it. 
+<!  
+<!==========================================================================-->  
+<html> 
+<head> 
+<title>HTA Template Generator</title> 
+<OBJECT ID="oShell" 
+    CLASSID="clsid:13709620-C279-11CE-A49E-444553540000"> 
+</OBJECT> 
+<SCRIPT Language="VBScript"> 
+DoResize() ' run the subroutine to position the containing window (your HTA dialog) before the body is rendered. 
+Sub DoResize 
+        strComputer = "." 
+        Set objWMIService = GetObject("winmgmts:\\" & strComputer & "\root\cimv2") 
+        Set colItems = objWMIService.ExecQuery("Select * From Win32_DesktopMonitor") 
+    For Each objItem In colItems 
+        If objItem.Availability = 3 Then 
+            intHorizontal = objItem.ScreenWidth 
+            intVertical = objItem.ScreenHeight 
+            Exit For 
+        End If 
+    Next 
+        intLeft = (intHorizontal - 895) / 2 
+        intTop = (intVertical - 750) / 2 
+        window.resizeTo 895,750 
+        window.moveTo intLeft, intTop 
+End Sub 
+</SCRIPT> 
+<HTA:APPLICATION  
+    ID="HTA Template Generator" 
+    APPLICATIONNAME="HTA Template Generator" 
+    CAPTION="yes" 
+    SCROLL="no" 
+    SYSMENU="yes" 
+    SINGLEINSTANCE="yes" 
+    WINDOWSTATE="normal" 
+    CONTEXTMENU="no" 
+    INNERBORDER="no"  
+    BORDERSTYLE="sunken" 
+    BORDER="dialog" 
+    SHOWINTASKBAR="yes" 
+    MINIMIZEBUTTON="yes"  
+    MAXIMIZEBUTTON="no" 
+> 
+</head> 
+<SCRIPT Language="VBScript"> 
+Sub Window_Onload 
+    repository.disabled = True 
+    chkNewDefault.Disabled = True 
+    BasicTextArea55.style.visibility="hidden" 
+    BasicTextArea56.style.visibility="hidden" 
+    UserOption(0).checked = True 
+    txtBox1.Focus 
+    BasicCheckbox1.checked = True 
+    BasicCheckbox10.checked = True 
+    txtDefaultLocation.Disabled = True                ' Disables the checkbox for the save location 
+    Const ForReading = 1 
+    Set objShell = CreateObject("Wscript.Shell") 
+    strRPath = objShell.CurrentDirectory 
+' Here we check for htatg.ini where the default save 
+' location is stored.  This will allow any user to change the default 
+' only one time.  If the htatg.ini file is missing, it will be created 
+' and use the current folder location \Scripts as the target. 
+    Set objFSO = CreateObject("Scripting.FileSystemObject")     
+    If objFSO.FileExists(strRPath & "\htatg.ini") Then 
+        Set objFile = objFSO.OpenTextFile(strRPath & "\htatg.ini", ForReading) 
+        strContents = objFile.ReadAll() 
+        objFile.Close 
+        Set objRegEx = CreateObject("VBScript.RegExp") 
+        objRegEx.Global = True 
+        objRegEx.Pattern = "default=" 
+        Set colMatches = objRegEx.Execute(strContents) 
+            If colMatches.Count > 0 Then 
+                For Each objMatch In colMatches 
+                    arrText = Split(strContents,"=") 
+                    strDefaultLocation = arrText(1) 
+                Next 
+            End If 
+        txtDefaultLocation.Value = strDefaultLocation 
+    Else 
+        MsgBox "This is the first time HTA Template Generator has been run. A required .ini (htatg.ini) file will be created in the same directory as this .hta." & vbCrLf & vbCrLf & "The default save repository for all generated scripts will be " & strRPath & "\Scripts" & " and can be changed under Save Options.", vbOKOnly + vbInformation, "HTA Template Generator v3 - Setup" 
+        Set objFile = objFSO.CreateTextFile(strRPath & "\htatg.ini") 
+        objFile.WriteLine "[save]" 
+        objFile.WriteLine "default=" & strRPath & "\Scripts" 
+        objFile.Close 
+        txtDefaultLocation.Value = strRPath & "\Scripts" 
+    End If 
+End Sub 
+Function ValidateForm 
+    ValidateForm = True 
+    If txtBox1.value = "" Then 
+        MsgBox "You must enter a name for the script.", vbOKOnly + vbExclamation, "HTA Template Generator v3" 
+        ValidateForm = False 
+    End If 
+End Function 
+Sub RunScripts 
+    Dim strScroll,x,strHorizontal,strVertical 
+If ValidateForm = False Then 
+        'Form not validated, exiting 
+Else 
+    strDate = Now 
+    strTech = txtBox2.value 
+    strProgram = txtBox1.value 
+    strFolderName = txtDefaultLocation.Value 
+    strMetaDataName = "" 
+    Set objFSO = CreateObject("Scripting.FileSystemObject") 
+ 
+    ' Check for the existence of the save to folder and script name 
+    ' If found, write script to folder and append name with a sequential number 
+    If chkNoSubfolder.Checked = True Then 
+        If CheckForFile(strFolderName & "\" & strProgram & ".hta") = 0 Then 
+            strFileName = strFolderName & "\" & strProgram & ".hta" 
+            CreateSubFolders(strFolderName) 
+            Set objFile = objFSO.CreateTextFile(strFileName) 
+            strMetaDataName = strProgram & ".hta" 
+        Else 
+            Do 
+                x = x + 1 
+            Loop Until CheckForFile(strFolderName & "\" & strProgram & "_" & x & ".hta") = 0 
+            strFileName = strFolderName & "\" & strProgram & "_" & x & ".hta" 
+            Set objFile = objFSO.CreateTextFile(strFileName) 
+            strMetaDataName = strProgram & "_" & x & ".hta" 
+        End If 
+    Else 
+        If CheckForFile(strFolderName & "\" & strProgram & "\" & strProgram & ".hta") = 0 Then 
+            If Not objFSO.FolderExists(strFolderName & "\" & strProgram) Then 
+                CreateSubFolders(strFolderName) 
+                Set objFolder = objFSO.CreateFolder(strFolderName & "\" & strProgram) 
+            End If 
+            strFileName = strFolderName & "\" & strProgram & "\" & strProgram & ".hta" 
+            Set objFile = objFSO.CreateTextFile(strFileName) 
+            strMetaDataName = strProgram & ".hta" 
+        Else 
+            Do 
+                x = x + 1 
+            Loop Until CheckForFile(strFolderName & "\" & strProgram & "\" & strProgram & "_" & x & ".hta") = 0 
+            If Not objFSO.FolderExists(strFolderName & "\" & strProgram) Then 
+                CreateSubFolders(strFolderName) 
+                Set objFolder = objFSO.CreateFolder(strFolderName & "\" & strProgram) 
+            End If 
+            strFileName = strFolderName & "\" & strProgram & "\" & strProgram & "_" & x & ".hta" 
+            Set objFile = objFSO.CreateTextFile(strFileName) 
+            strMetaDataName = strProgram & "_" & x & ".hta" 
+        End If 
+    End If     
+ 
+' Begin Template 
+    objFile.WriteLine "<!========================================================================" 
+    objFile.WriteLine "<!" 
+    objFile.WriteLine "<! NAME: " & strMetaDataName 
+    objFile.WriteLine "<!" 
+    objFile.WriteLine "<! REVISION: " & x     
+    objFile.WriteLine "<!"     
+    objFile.WriteLine "<! AUTHOR: " & strTech 
+    objFile.WriteLine "<!"     
+    objFile.WriteLine "<! DATE  : " & strDate 
+    objFile.WriteLine "<!" 
+    objFile.WriteLine "<! COMMENT: " 
+    ' If comments section is blank, write a comment delimiter.  If not blank, 
+    ' check the length of comments against length of text area, trim sentence 
+    ' if necessary and write to a new line with the comment delimiter 
+    If BasicTextArea2.Value = "" Then 
+        objFile.WriteLine"<!" 
+    Else 
+        Dim strBasicTxtArea,arrLines 
+        strBasicTxtArea = BasicTextArea2.Value 
+        arrLines = Split(strBasicTxtArea,VBCrLf) ' Split each line by the VBCrLf 
+        For i=0 to UBound(arrLines) ' UBound function returns each line in the btaScriptOutput 
+            If Len(arrLines(i)) > 67 Then 
+                arrWords = Split(arrLines(i), " ") 
+                For w = 0 to UBound(arrWords) 
+                    If Len(strLine & arrWords(w)) > 66 Then 
+                        objFile.WriteLine "<! " & vbTab & strLine 
+                        strLine = "" 
+                        w = w - 1 
+                    Else 
+                        If strLine = "" Then 
+                            strLine = arrWords(w) 
+                        Else 
+                            strLine = strLine & " " & arrWords(w) 
+                        End If 
+                        If w = UBound(arrWords) Then 
+                            objFile.WriteLine "<! " & vbTab & strLine 
+                        End If 
+                    End If 
+                Next 
+            Else 
+                objFile.WriteLine "<! " & vbTab & arrLines(i) 
+            End If 
+        Next 
+    End If 
+    strWindowSize = DropDown4.Value 
+    If strWindowSize = "Small" Then 
+        strHorizontal = "500" 
+        strVertical = "600" 
+    ElseIf strWindowSize = "Medium" Then 
+        strHorizontal = "850" 
+        strVertical = "700" 
+    ElseIf strWindowSize = "Large" Then 
+        strHorizontal = "900" 
+        strVertical = "800" 
+    ElseIf strWindowSize = "Custom" Then 
+        BasicTextArea55.style.visibility="visible" 
+        BasicTextArea56.style.visibility="visible" 
+        If BasicTextArea55.value = "" Or BasicTextArea56.value = "" Then 
+            MsgBox "Window Size custom fields cannot be blank.  Defaulting to 500 x 600 px", vbOKOnly + vbExclamation, "HTA Template Generator v3" 
+            BasicTextArea55.Value = 500 
+            BasicTextArea56.value = 600 
+         End If 
+        strHorizontal = BasicTextArea55.Value 
+        strVertical = BasicTextArea56.Value 
+    End If 
+    objFile.WriteLine"<!" 
+    objFile.WriteLine "<!======================================================================-->" 
+    objFile.WriteLine "<!" 
+    objFile.WriteLine "<html>" 
+    objFile.WriteLine "<head>" 
+    objFile.WriteLine"<title>" & strProgram & "_" & x & "</title>" 
+    objFile.WriteLine"<SCRIPT Language=""VBScript"">" 
+    objFile.WriteLine"DoResize() ' run the subroutine to position the containing window (your HTA dialog) before the body is rendered." 
+    objFile.WriteLine"Sub DoResize" 
+    objFile.WriteLine"        strComputer = "".""" 
+    objFile.WriteLine"    Set objWMIService = GetObject(""winmgmts:\\"" & strComputer & ""\root\cimv2"")" 
+    objFile.WriteLine"    Set colItems = objWMIService.ExecQuery(""Select * From Win32_DesktopMonitor"")" 
+    objFile.WriteLine"    For Each objItem In colItems" 
+    objFile.WriteLine"        If objItem.Availability = 3 Then" 
+    objFile.WriteLine"            intHorizontal = objItem.ScreenWidth" 
+    objFile.WriteLine"            intVertical = objItem.ScreenHeight" 
+    objFile.WriteLine"            Exit For" 
+    objFile.WriteLine"        End If" 
+    objFile.WriteLine"    Next" 
+    objFile.WriteLine"    intLeft = (intHorizontal - " & strHorizontal & ") / 2" 
+    objFile.WriteLine"    intTop = (intVertical - " & strVertical & ") / 2" 
+    objFile.WriteLine"    window.resizeTo " & strHorizontal & "," & strVertical 
+    objFile.WriteLine"    window.moveTo intLeft, intTop" 
+    objFile.WriteLine"End Sub" 
+    objFile.WriteLine"<" & "/SCRIPT>" 
+    objFile.WriteLine "<HTA:APPLICATION" 
+    If BasicCheckBox1.Checked = True Then 
+        strCaption = "yes" 
+    Else If BasicCheckBox1.Checked = False Then 
+        strCaption = "no"     
+    End If 
+    End If 
+    If BasicCheckBox2.Checked = True Then 
+        strConstMnu = "yes" 
+    Else If BasicCheckBox2.Checked = False Then 
+        strConstMnu = "no" 
+    End If 
+    End If 
+    If BasicCheckBox3.Checked = True Then 
+        strInnerBorder = "yes" 
+    Else If BasicCheckBox3.Checked = False Then 
+        strInnerBorder = "no" 
+    End If 
+    End If 
+    If BasicCheckBox4.Checked = True Then 
+        strMax = "yes" 
+    Else If BasicCheckBox4.Checked = False Then 
+        strMax = "no" 
+    End If 
+    End If 
+    If BasicCheckBox5.Checked = True Then 
+        strMin = "yes" 
+    Else If BasicCheckBox5.Checked = False Then 
+        strMin = "no" 
+    End If 
+    End If 
+    If BasicCheckBox6.Checked = True Then 
+        strScroll = "yes" 
+    Else If BasicCheckBox6.Checked = False Then 
+        strScroll = "no" 
+    End If 
+    End If 
+    If BasicCheckBox7.Checked = True Then 
+        strSelection = "yes" 
+    Else If BasicCheckBox7.Checked = False Then 
+        strSelection = "no" 
+    End If 
+    End If 
+    If BasicCheckBox8.Checked = True Then 
+        strShoTskBar = "yes" 
+    Else If BasicCheckBox8.Checked = False Then 
+        strShoTskBar = "no" 
+    End If 
+    End If 
+    If BasicCheckBox9.Checked = True Then 
+        strSnglInst = "yes" 
+    Else If BasicCheckBox9.Checked = False Then 
+        strSnglInst = "no" 
+    End If 
+    End If 
+    If BasicCheckBox10.Checked = True Then 
+        strSysMenu = "yes" 
+    Else If BasicCheckBox10.Checked = False Then 
+        strSysMenu = "no" 
+    End If 
+    End If 
+    strBType = DropDown1.Value 
+    strBStyle = DropDown2.Value 
+    strWState = DropDown3.Value 
+ 
+    objFile.WriteLine "" 
+    objFile.WriteLine "ID=""" & strProgram & """" 
+    objFile.WriteLine "APPLICATIONNAME=""" & strProgram & """" 
+    objFile.WriteLine "BORDER=""" & strBType & """" 
+    objFile.WriteLine "BORDERSTYLE=""" & strBStyle & """"         
+    objFile.WriteLine "CAPTION=""" & strCaption & """" 
+    objFile.WriteLine "CONTEXTMENU=""" & strConstMnu & """" 
+    objFile.WriteLine "INNERBORDER=""" & strInnerBorder & """" 
+    objFile.WriteLine "MAXIMIZEBUTTON=""" & strMax & """" 
+    objFile.WriteLine "MINIMIZEBUTTON=""" & strMin & """"                 
+    objFile.WriteLine "SCROLL=""" & strScroll & """" 
+    objfile.WriteLine "SELECTION=""" & strSelection & """"     
+    objFile.WriteLine "SHOWINTASKBAR=""" & strShoTskBar & """"     
+    objFile.WriteLine "SINGLEINSTANCE=""" & strSnglInst & """" 
+    objfile.WriteLine "SYSMENU=""" & strSysMenu & """"         
+    objFile.WriteLine "WINDOWSTATE=""" & strWState & """" 
+    objFile.WriteLine ">" 
+    objFile.WriteLine "</head>" 
+    objFile.WriteLine "" 
+    objFile.WriteLine "<SCRIPT Language=""VBScript"">" 
+    objFile.WriteLine "" 
+    objFile.WriteLine "<" & "/" & "SCRIPT>" 
+    objFile.WriteLine "" 
+    objFile.WriteLine "<body>" 
+    objFile.WriteLine ""    
+    objFile.WriteLine "</body>" 
+    objFile.WriteLine "" 
+    objFile.WriteLine "</html>"     
+     
+    Const ForReading = 1 
+    Set objFile = objFSO.OpenTextFile(strFileName, ForReading) 
+    strText = objFile.ReadAll 
+    objFile.Close 
+    BasicTextArea.Value = strText 
+    repository.disabled = False 
+    End If 
+End Sub 
+' Subroutine to open generated script folder 
+Sub OpenFolder 
+    If chkNoSubfolder.Checked = False Then 
+        oshell.Explore txtDefaultLocation.Value & "\" & txtBox1.value 
+    Else 
+        oshell.Explore txtDefaultLocation.Value 
+    End If 
+End Sub 
+' Function to manipulate the text boxes, allowing the 
+' user to enter a custom size of the generated .hta 
+Function chooseSize 
+    strWindowSize = DropDown4.Value 
+    If strWindowSize = "Small" Then 
+        BasicTextArea55.style.visibility="hidden" 
+        BasicTextArea56.style.visibility="hidden" 
+        strHorizontal = "500" 
+        strVertical = "600" 
+    ElseIf strWindowSize = "Medium" Then 
+        BasicTextArea55.style.visibility="hidden" 
+        BasicTextArea56.style.visibility="hidden" 
+        strHorizontal = "850" 
+        strVertical = "700" 
+    ElseIf strWindowSize = "Large" Then 
+        BasicTextArea55.style.visibility="hidden" 
+        BasicTextArea56.style.visibility="hidden" 
+        strHorizontal = "900" 
+        strVertical = "800" 
+    ElseIf strWindowSize = "Custom" Then 
+        BasicTextArea55.style.visibility="visible" 
+        BasicTextArea56.style.visibility="visible" 
+        strHorizontal = BasicTextArea55.Value 
+        strVertical = BasicTextArea56.Value 
+    End If 
+End Function 
+' Subroutine to check for the existence of the named folder.  This  
+' is only if the checkbox for Change Save Location is true.  If the 
+' folder structure does not exist, create it 
+Sub CreateSubFolders(strFolder) 
+    Dim objFSO 
+    Set objFSO = CreateObject("Scripting.FileSystemObject") 
+    If objFSO.FolderExists(strFolder) Then 
+        Exit Sub 
+    Else 
+        CreateSubFolders(objFSO.GetParentFolderName(strFolder)) 
+    End If 
+    objFSO.CreateFolder(strFolder) 
+End Sub     
+Sub AllOptions 
+    BasicCheckbox1.checked = True 
+    BasicCheckbox2.checked = True 
+    BasicCheckbox3.checked = True 
+    BasicCheckbox4.checked = True 
+    BasicCheckbox5.checked = True 
+    BasicCheckbox6.checked = True 
+    BasicCheckbox7.checked = True 
+    BasicCheckbox8.checked = True 
+    BasicCheckbox9.checked = True     
+    BasicCheckbox10.checked = True 
+End Sub 
+Sub NoOptions 
+    BasicCheckbox1.checked = True 
+    BasicCheckbox2.checked = False 
+    BasicCheckbox3.checked = False 
+    BasicCheckbox4.checked = False 
+    BasicCheckbox5.checked = False 
+    BasicCheckbox6.checked = False 
+    BasicCheckbox7.checked = False 
+    BasicCheckbox8.checked = False 
+    BasicCheckbox9.checked = False 
+    BasicCheckbox10.checked = True 
+End Sub 
+    ' Subroutine that allows the user to specify a different save to folder 
+Sub ChangeSaveFolder 
+    Set objShell = CreateObject("Wscript.Shell") 
+    strRPath = objShell.CurrentDirectory 
+    Const ForReading = 1 
+    If chkSaveFolder.Checked = True Then 
+        chkNewDefault.disabled = False 
+        txtDefaultLocation.Disabled = False 
+    ElseIf chkSaveFolder.Checked = False Then 
+        chkNewDefault.Checked = False 
+        chkNewDefault.Disabled = True 
+        Set objFSO = CreateObject("Scripting.FileSystemObject")     
+        Set objFile = objFSO.OpenTextFile(strRPath & "\htatg.ini", ForReading)     
+        strContents = objFile.ReadAll() 
+        objFile.Close 
+        Set objRegEx = CreateObject("VBScript.RegExp") 
+        objRegEx.Global = True 
+        objRegEx.Pattern = "default=" 
+        Set colMatches = objRegEx.Execute(strContents)   
+            If colMatches.Count > 0 Then 
+                For Each objMatch In colMatches 
+                    arrText = Split(strContents,"=") 
+                    strDefaultLocation = arrText(1) 
+                Next 
+            End If 
+        txtDefaultLocation.Value = strDefaultLocation 
+        txtDefaultLocation.disabled = True 
+    End If 
+End Sub 
+Sub ExitProgram 
+    window.close() 
+End Sub 
+ 
+Sub RunScript 
+    Location.Reload(True) 
+End Sub 
+ 
+Function CheckForFile(strFilePath) 
+    Set objFSO = CreateObject("Scripting.FileSystemObject") 
+    If objFSO.FileExists(strFilePath) Then 
+        CheckForFile = 1 
+    Else 
+        CheckForFile = 0 
+    End If 
+End Function 
+' Subroutine that will allow user to change the "Save" folder. 
+Sub MakeNewDefault 
+    Const ForReading = 1 
+    Const ForWriting = 2 
+    Set objShell = CreateObject("Wscript.Shell") 
+    strRPath = objShell.CurrentDirectory 
+    If chkNewDefault.Checked = True Then 
+        strMBox = MsgBox("This will change the default save repository." & VBCrLf & "Click Yes to change, or No to cancel.", vbYesNo + vbInformation, "Change default save repository") 
+        ' If the user clicked no exit  
+        If strMBox = vbNo Then 
+            chkSaveFolder.Checked = False 
+            chkNewDefault.Checked = False 
+            chkNewDefault.Checked = False 
+            chkNewDefault.Disabled = True 
+            Set objFSO = CreateObject("Scripting.FileSystemObject")     
+            Set objFile = objFSO.OpenTextFile(strRPath & "\htatg.ini", ForReading) 
+            strContents = objFile.ReadAll() 
+            objFile.Close 
+            Set objRegEx = CreateObject("VBScript.RegExp") 
+            objRegEx.Global = True 
+            objRegEx.Pattern = "default=" 
+            Set colMatches = objRegEx.Execute(strContents) 
+                If colMatches.Count > 0 Then 
+                    For Each objMatch In colMatches 
+                        arrText = Split(strContents,"=") 
+                        strDefaultLocation = arrText(1) 
+                    Next 
+                End If 
+            txtDefaultLocation.Value = strDefaultLocation 
+            txtDefaultLocation.disabled = True 
+           Else 
+            chkSaveFolder.Checked = False 
+            chkNewDefault.Checked = False 
+            chkNewDefault.Disabled = True 
+            txtDefaultLocation.Disabled = True 
+            strNewPath = txtDefaultLocation.Value 
+            Set objFSO = CreateObject("Scripting.FileSystemObject") 
+            Set objFile = objFSO.OpenTextFile(strRPath & "\htatg.ini", ForReading) 
+            strContents = objFile.ReadAll() 
+            objFile.Close 
+            Set objRegEx = CreateObject("VBScript.RegExp") 
+            objRegEx.Global = True    
+            objRegEx.Pattern = "default=" 
+            Set colMatches = objRegEx.Execute(strContents) 
+            If colMatches.Count > 0 Then 
+                For Each objMatch In colMatches 
+                    arrText = Split(strContents,"=") 
+                    strNewText = Replace(strContents, arrText(1), strNewPath) 
+                    objFile.Close 
+                    Set objFile = objFSO.OpenTextFile(strRPath & "\htatg.ini", ForWriting) 
+                    objFile.WriteLine strNewText 
+                   Next 
+            End If 
+        End If 
+    End If 
+End Sub 
+</SCRIPT> 
+ 
+<!--Below lines set the background color  --> 
+<body> 
+ 
+body 
+{ 
+background-color:#b0c4de; 
+background-repeat:no-repeat; 
+background-position:center top; 
+margin-right:100px; 
+} 
+<!--End of background color  --> 
+ 
+ 
+<table border="1"width="840" 
+cellpadding="5"> 
+<tr> 
+  <td> 
+   <table width="840"> 
+  <td> 
+      <b><font color="grey" face="Arial" size="1">Generates a basic .hta (Hyper Text Application)</font></b></br> 
+     <font color="black" face="Arial" size="1">Name of script:</font> 
+     <font color="red" face="Arial" size="1">(Required)</font></br> 
+     <input type="text" name="txtBox1" size="30"></br> 
+     <font color="black" face="Arial" size="1">Name of author:</font> 
+     <font color="black" face="Arial" size="1">(Optional)</font></br> 
+     <input type="text" name="txtBox2" size="30"></br> 
+  <td>           
+     <font color="black" face="Arial" size="1">Add Comments Here:</font><BR> 
+     <textarea name="BasicTextArea2" rows="6" cols="65"></textarea><BR> 
+  <tr> 
+   <table width="840"> 
+    <hr />   
+     <b><font color="black" face="Arial" size="1">Common HTA: Application Object Options: (Checked = yes)</font></b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp 
+     <font color="black" face="Arial" size="1"><input type="radio" name="UserOption" value="1"onClick="NoOptions"> Select None </font> 
+        <font color="black" face="Arial" size="1"><input type="radio" name="UserOption" value="2"onClick="AllOptions"> Select All </font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp 
+     <font color="black" face="Arial" size="1"><a href="http://msdn.microsoft.com/en-us/library/ms536495(v=vs.85).aspx" target="blank">HTA:APPLICATION Object Reference</a href>     
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox1"value="1"> Caption </font></td> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox2"value="2"> Context Menu </font></td> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox3"value="3"> Inner Border </font></td> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox4"value="4"> Maximize Button </font></td><tr> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox5"value="5"> Minimize Button </font></td> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox6"value="6"> Scroll Bar </font></td> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox7"value="7"> Selection </font></td> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox8"value="8"> Show In Taskbar </font></td><tr> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox9"value="9"> Single Instance </font></td> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="BasicCheckbox10"value="10"> Sys Menu </font></td></br> 
+     <b><font color="black" face="Arial" size="1">NOTE: If you deselect All Options, including Caption & Sys Menu, you will have an .HTA with no way to close it other than by killing the process from the Task Manager</font></b></br>          
+ <tr>   
+   <table width="840"> 
+     <td><b><font color="black" face="Arial" size="1">Save Options:</font></b><tr> 
+     <font color="black" face="Arial" size="2">Border Type:</font> 
+    <select size="1" name="DropDown1"> 
+    <option value="Dialog"> Dialog </option> 
+    <option value="Thick"> Thick </option> 
+    <option value="Thin"> Thin </option> 
+    <option value="None"> None </option> 
+    </select>&nbsp;&nbsp;&nbsp;&nbsp 
+    <font color="black" face="Arial" size="2">Border Style:</font> 
+    <select size="1" name="DropDown2"> 
+    <option value="Normal"> Normal </option> 
+    <option value="Complex"> Complex </option> 
+    <option value="Raised"> Raised </option> 
+    <option value="Static"> Static </option> 
+    <option value="Sunken"> Sunken </option> 
+    </select>&nbsp;&nbsp;&nbsp;&nbsp 
+    <font color="black" face="Arial" size="2">Window State:</font> 
+    <select size="1" name="DropDown3"> 
+    <option value="Normal"> Normal </option> 
+    <option value="Minimized"> Minimized </option> 
+    <option value="Maximized"> Maximized </option> 
+    </select>&nbsp;&nbsp;&nbsp;&nbsp 
+    <font color="black" face="Arial" size="2">Window Size:</font> 
+    <select size="1" name="DropDown4" onChange="chooseSize"> 
+    <option value="Small"> 500 x 600 px </option> 
+    <option value="Medium"> 850 x 700 px </option> 
+    <option value="Large"> 900 x 800 px </option> 
+    <option    value="Custom"> Custom Size </option 
+    </select>&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp 
+    <textarea name="BasicTextArea55" rows="1" cols="4"></textarea> 
+    <textarea name="BasicTextArea56" rows="1" cols="4"></textarea> 
+    </select> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="chkSaveFolder"value="19"onClick="ChangeSaveFolder">Change save repository:</font> 
+     <font color="black" face="Arial" size="1"><input type="checkbox"name="chkNewDefault"value="21"onClick="MakeNewDefault">Save as new default repository:</font></td><tr>      
+     <td><input type="text" name="txtDefaultLocation" size="50"></td><tr> 
+     <td><font color="black" face="Arial" size="1"><input type="checkbox"name="chkNoSubfolder"value="20">Do not save script in its own subfolder</font></td><tr> 
+     <hr /> 
+  </table> 
+    <hr /> 
+    <b><font color="black" face="Arial" size="1">Script Output:</font></b><BR> 
+    <textarea name="BasicTextArea" rows="11" cols="98"readonly="readonly"></textarea><BR><BR> 
+    <input type="button" value="Create HTA" onClick="RunScripts"title="Click to generate HTA"> 
+    <input type="button" value="Refresh" onClick="RunScript"title="Reload HTA"> 
+    <input id="repository" type="button" value="Open Script Repository" onClick="OpenFolder" title="Open Script Repository"> 
+    <input id=CloseButton  class="button" type="button" value="  Exit  " name="exit_button"  onClick="ExitProgram" title="Click to Exit"><BR> 
+</body> 
+</html> 
